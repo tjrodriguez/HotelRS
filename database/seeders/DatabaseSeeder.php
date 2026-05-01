@@ -15,11 +15,23 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
-
+        // Create admin user
         User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
+            'name' => 'Admin User',
+            'email' => 'admin@hotel.com',
+            'password' => bcrypt('password'),
+            'role' => 'admin',
         ]);
+
+        // Create guest user
+        User::factory()->create([
+            'name' => 'Guest User',
+            'email' => 'guest@hotel.com',
+            'password' => bcrypt('password'),
+            'role' => 'guest',
+        ]);
+
+        // Seed room types and rooms
+        $this->call([\Database\Seeders\RoomTypesSeeder::class, \Database\Seeders\RoomsSeeder::class]);
     }
 }

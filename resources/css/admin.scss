@@ -1,0 +1,10 @@
+/* Admin-specific styles — override or extend variables and components here */
+
+:root {
+  --primary: #667eea; /* admin accent purple */
+  --primary-hover: #5568d3;
+}
+
+.admin-dashboard { }
+
+.admin-dashboard .admin-sidebar { border-right: 1px solid rgba(255,255,255,0.06); }

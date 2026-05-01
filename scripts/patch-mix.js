@@ -23,15 +23,14 @@ function patchFile(filePath, replacements) {
 patchFile(path.join(mixRoot, 'src', 'config.js'), [
     [
         /    const argv = yargs\(process\.argv\.slice\(2\)\)\n        \.options\(\{[\s\S]*?\n        \}\)\n        \.parseSync\(\);/,
-        `    const cli = yargs(process.argv.slice(2))
+        `    const argv = yargs(process.argv.slice(2))
         .options({
             https: { type: 'boolean', default: false },
             hmrPort: { type: 'string', default: '8080' },
             p: { type: 'boolean', default: false },
             hot: { type: 'boolean', default: false }
-        });
-
-    const argv = typeof cli.parseSync === 'function' ? cli.parseSync() : cli.parse();`
+        })
+        .parse();`
     ]
 ]);
 
