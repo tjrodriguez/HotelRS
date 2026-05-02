@@ -38,3 +38,14 @@ patchFile(path.join(mixRoot, 'src', 'builder', 'webpack-plugins.js'), [
     [/let WebpackBar = require\('webpackbar'\);\n\n/, ''],
     [/\n\n    if \(process\.env\.NODE_ENV !== 'test'\) \{\n        plugins\.push\(new WebpackBar\(\{ name: 'Mix' \}\)\);\n    \}\n/, '\n']
 ]);
+
+patchFile(path.join(mixRoot, 'src', 'components', 'CssWebpackConfig.js'), [
+    [
+        /sassOptions: \{\s+precision: 8,\s+outputStyle: 'expanded'\s+\}/g,
+        `sassOptions: {
+                            precision: 8,
+                            outputStyle: 'expanded',
+                            silenceDeprecations: ['legacy-js-api']
+                        }`
+    ]
+]);

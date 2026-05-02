@@ -1,0 +1,28 @@
+.management-section {
+  background-color: white;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: var(--shadow);
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.section-header h2 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.table-container {
+  overflow-x: auto;
+}
+
+.table-wrapper {
+  background: rgba(255, 255, 255, 0.02);
+}

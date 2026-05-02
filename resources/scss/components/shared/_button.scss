@@ -1,0 +1,140 @@
+button {
+  font-family: inherit;
+  cursor: pointer;
+  border: none;
+  transition: var(--transition-fast);
+  position: relative;
+  overflow: hidden;
+}
+
+button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+button:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn {
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition-fast);
+  border: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  letter-spacing: 0.3px;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--primary), #1d4ed8);
+  color: white;
+  box-shadow: var(--shadow);
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: linear-gradient(135deg, var(--primary-hover), #1e40af);
+  box-shadow: var(--shadow-lg);
+}
+
+.btn-secondary {
+  background-color: var(--secondary);
+  color: white;
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background-color: #4b5563;
+}
+
+.btn-danger {
+  background: linear-gradient(135deg, var(--danger), #dc2626);
+  color: white;
+}
+
+.btn-danger:hover:not(:disabled) {
+  background: linear-gradient(135deg, #dc2626, #b91c1c);
+}
+
+.btn-success {
+  background: linear-gradient(135deg, var(--success), #059669);
+  color: white;
+}
+
+.btn-success:hover:not(:disabled) {
+  background: linear-gradient(135deg, #059669, #047857);
+}
+
+.btn-warning {
+  background-color: var(--warning);
+  color: white;
+}
+
+.btn-sm {
+  padding: 6px 12px;
+  font-size: 13px;
+  border-radius: 6px;
+}
+
+.btn-large {
+  padding: 14px 28px;
+  font-size: 16px;
+  border-radius: 10px;
+}
+
+.btn-outline {
+  background-color: transparent;
+  border: 2px solid var(--border);
+  color: var(--dark);
+}
+
+.btn-outline:hover:not(:disabled) {
+  background-color: var(--light);
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.btn-close {
+  background: none;
+  border: none;
+  font-size: 28px;
+  cursor: pointer;
+  padding: 4px;
+  color: var(--text-muted);
+  transition: var(--transition-fast);
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-close:hover {
+  color: var(--primary);
+  background-color: var(--border-light);
+}
+
+.badge {
+  display: inline-block;
+  padding: 6px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: white;
+  letter-spacing: 0.3px;
+}
+
+.badge-admin { background: linear-gradient(135deg, #dc2626, #b91c1c); }
+.badge-guest { background: linear-gradient(135deg, var(--primary), #1d4ed8); }
+.badge-pending { background: linear-gradient(135deg, var(--warning), #d97706); }
+.badge-confirmed { background: linear-gradient(135deg, var(--success), #059669); }
+.badge-completed { background: linear-gradient(135deg, var(--primary), #1d4ed8); }
+.badge-cancelled { background: linear-gradient(135deg, #9ca3af, #6b7280); }

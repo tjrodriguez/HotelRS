@@ -6,34 +6,38 @@ use App\Models\Payment;
 use App\Models\Reservation;
 use Illuminate\Http\Request;
 
-class PaymentController {
-    public function index(Request $request) {
+class PaymentController
+{
+    public function index(Request $request)
+    {
         $query = Payment::with(['reservation']);
 
         if ($request->user()->isGuest()) {
             $query->whereHas('reservation', function ($q) {
-                $q->where('user_id', auth()->id());
+                $q->where('guest_id', auth()->id());
             });
         }
 
         return response()->json($query->paginate(20));
     }
 
-    public function show($id, Request $request) {
+    public function show($id, Request $request)
+    {
         $payment = Payment::with('reservation')->find($id);
 
-        if (!$payment) {
+        if (! $payment) {
             return response()->json(['message' => 'Not found'], 404);
         }
 
-        if ($request->user()->isGuest() && $payment->reservation->user_id !== $request->user()->id) {
+        if ($request->user()->isGuest() && $payment->reservation->guest_id !== $request->user()->id) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
         return response()->json($payment);
     }
 
-    public function store(Request $request) {
+    public function store(Request $request)
+    {
         $validated = $request->validate([
             'reservation_id' => 'required|exists:reservations,id',
             'amount' => 'required|numeric|min:0',
@@ -42,7 +46,7 @@ class PaymentController {
 
         $reservation = Reservation::find($validated['reservation_id']);
 
-        if ($request->user()->isGuest() && $reservation->user_id !== $request->user()->id) {
+        if ($request->user()->isGuest() && $reservation->guest_id !== $request->user()->id) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
@@ -58,7 +62,7 @@ class PaymentController {
         $payment->update([
             'status' => 'completed',
             'paid_at' => now(),
-            'transaction_id' => 'TXN-' . str()->random(16),
+            'transaction_id' => 'TXN-'.str()->random(16),
         ]);
 
         // Update reservation status if full payment is made
@@ -69,10 +73,11 @@ class PaymentController {
         return response()->json($payment, 201);
     }
 
-    public function refund($id, Request $request) {
+    public function refund($id, Request $request)
+    {
         $payment = Payment::find($id);
 
-        if (!$payment) {
+        if (! $payment) {
             return response()->json(['message' => 'Not found'], 404);
         }
 

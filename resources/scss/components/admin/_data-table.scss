@@ -1,0 +1,30 @@
+.management-section {
+  background-color: white;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: var(--shadow);
+}
+
+.table-container {
+  overflow-x: auto;
+}
+
+.table-wrapper {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.data-table th,
+.data-table td {
+  padding: 12px;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+}
+
+.data-table tbody tr:hover {
+  background: rgba(0,0,0,0.02);
+}
