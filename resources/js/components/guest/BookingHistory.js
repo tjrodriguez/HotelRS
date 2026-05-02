@@ -3,10 +3,31 @@ import { AuthContext } from '../../contexts/AuthContext';
 import PricingBreakdown from './PricingBreakdown';
 
 export default function BookingHistory() {
+  const Icon = ({ type }) => {
+    const icons = {
+      list: <><rect x="4" y="4" width="16" height="16" rx="2" strokeWidth="1.8" /><path d="M8 8h8M8 12h8M8 16h5" strokeWidth="1.8" strokeLinecap="round" /></>,
+      calendar: <><rect x="4" y="5" width="16" height="15" rx="2" strokeWidth="1.8" /><path d="M8 3v4M16 3v4M4 10h16" strokeWidth="1.8" strokeLinecap="round" /></>,
+      clock: <><circle cx="12" cy="12" r="8" strokeWidth="1.8" /><path d="M12 8v5l3 2" strokeWidth="1.8" strokeLinecap="round" /></>,
+      note: <><path d="M6 3h12a1 1 0 0 1 1 1v16l-3-2-3 2-3-2-3 2V4a1 1 0 0 1 1-1z" strokeWidth="1.8" strokeLinejoin="round" /><path d="M9 8h6" strokeWidth="1.8" strokeLinecap="round" /></>,
+    };
+
+    return (
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden>
+        {icons[type]}
+      </svg>
+    );
+  };
+
   const { token } = useContext(AuthContext);
   const [reservations, setReservations] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+
+  const totalReservations = reservations.length;
+  const upcomingReservations = reservations.filter((reservation) => {
+    const status = String(reservation.status || '').toLowerCase();
+    return ['pending', 'confirmed'].includes(status);
+  }).length;
 
   useEffect(() => {
     fetchMyReservations();
@@ -67,18 +88,22 @@ export default function BookingHistory() {
       checked_out: 'Checked Out',
       cancelled: 'Cancelled',
     };
-    return statusMap[status] || status;
+    const normalizedStatus = String(status || '').toLowerCase();
+    return statusMap[normalizedStatus] || status || 'Unknown';
   };
 
   const getStatusClass = (status) => {
-    return `status-${status.toLowerCase().replace('_', '-')}`;
+    return `status-${String(status || 'unknown').toLowerCase().replace(/_/g, '-')}`;
   };
 
   if (isLoading) {
     return (
       <div className="booking-history">
-        <h2>📋 My Bookings</h2>
-        <div className="loading">Loading your bookings...</div>
+        <div className="history-header">
+          <h2 className="section-title"><span className="title-icon"><Icon type="list" /></span>My Bookings</h2>
+          <p className="history-subtitle">Your reservations and stay details will appear here.</p>
+        </div>
+        <div className="loading booking-loading">Loading your bookings...</div>
       </div>
     );
   }
@@ -86,8 +111,11 @@ export default function BookingHistory() {
   if (error) {
     return (
       <div className="booking-history">
-        <h2>📋 My Bookings</h2>
-        <div className="alert alert-danger">⚠ {error}</div>
+        <div className="history-header">
+          <h2 className="section-title"><span className="title-icon"><Icon type="list" /></span>My Bookings</h2>
+          <p className="history-subtitle">Your reservations and stay details will appear here.</p>
+        </div>
+        <div className="alert alert-danger">{error}</div>
       </div>
     );
   }
@@ -95,8 +123,21 @@ export default function BookingHistory() {
   if (reservations.length === 0) {
     return (
       <div className="booking-history">
-        <h2>📋 My Bookings</h2>
-        <div className="empty-state">
+        <div className="history-header">
+          <h2 className="section-title"><span className="title-icon"><Icon type="list" /></span>My Bookings</h2>
+          <p className="history-subtitle">Track upcoming trips, cancellations, and completed stays.</p>
+        </div>
+        <div className="history-summary">
+          <div className="summary-pill">
+            <span className="summary-number">0</span>
+            <span className="summary-label">Total bookings</span>
+          </div>
+          <div className="summary-pill accent">
+            <span className="summary-number">0</span>
+            <span className="summary-label">Upcoming</span>
+          </div>
+        </div>
+        <div className="empty-state booking-empty-state">
           <p>No bookings yet</p>
           <p>Browse our rooms and make your first reservation!</p>
         </div>
@@ -106,7 +147,22 @@ export default function BookingHistory() {
 
   return (
     <div className="booking-history">
-      <h2>📋 My Bookings ({reservations.length})</h2>
+      <div className="history-header">
+        <h2 className="section-title"><span className="title-icon"><Icon type="list" /></span>My Bookings ({totalReservations})</h2>
+        <p className="history-subtitle">Track upcoming trips, cancellations, and completed stays.</p>
+      </div>
+
+      <div className="history-summary">
+        <div className="summary-pill">
+          <span className="summary-number">{totalReservations}</span>
+          <span className="summary-label">Total bookings</span>
+        </div>
+        <div className="summary-pill accent">
+          <span className="summary-number">{upcomingReservations}</span>
+          <span className="summary-label">Upcoming</span>
+        </div>
+      </div>
+
       <div className="reservations-list">
         {reservations.map((reservation) => {
           const nights = reservation.nights || 1;
@@ -130,7 +186,7 @@ export default function BookingHistory() {
 
               <div className="reservation-details">
                 <div className="detail-group">
-                  <span className="label">📅 Check-in</span>
+                  <span className="label"><span className="inline-icon"><Icon type="calendar" /></span>Check-in</span>
                   <span className="value">
                     {new Date(reservation.check_in_date).toLocaleDateString('en-US', {
                       weekday: 'short',
@@ -141,7 +197,7 @@ export default function BookingHistory() {
                   </span>
                 </div>
                 <div className="detail-group">
-                  <span className="label">📅 Check-out</span>
+                  <span className="label"><span className="inline-icon"><Icon type="calendar" /></span>Check-out</span>
                   <span className="value">
                     {new Date(reservation.check_out_date).toLocaleDateString('en-US', {
                       weekday: 'short',
@@ -152,7 +208,7 @@ export default function BookingHistory() {
                   </span>
                 </div>
                 <div className="detail-group">
-                  <span className="label">⏱ Duration</span>
+                  <span className="label"><span className="inline-icon"><Icon type="clock" /></span>Duration</span>
                   <span className="value">{nights} night{nights !== 1 ? 's' : ''}</span>
                 </div>
               </div>
@@ -169,7 +225,7 @@ export default function BookingHistory() {
 
               {reservation.special_requests && (
                 <div className="special-requests">
-                  <strong>💬 Special Requests</strong>
+                  <strong><span className="inline-icon"><Icon type="note" /></span>Special Requests</strong>
                   <p>{reservation.special_requests}</p>
                 </div>
               )}
@@ -190,7 +246,7 @@ export default function BookingHistory() {
                     className="btn-cancel-res"
                     title="Cancel this pending reservation"
                   >
-                    ✕ Cancel Reservation
+                    Cancel Reservation
                   </button>
                 </div>
               )}

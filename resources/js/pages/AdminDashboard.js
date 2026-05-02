@@ -4,7 +4,6 @@ import AdminSidebar from '../components/admin/AdminSidebar';
 import UsersManagement from '../components/admin/UsersManagement';
 import RoomsManagement from '../components/admin/RoomsManagement';
 import RoomTypesManagement from '../components/admin/RoomTypesManagement';
-import RoomStatusesManagement from '../components/admin/RoomStatusesManagement';
 import ReservationsManagement from '../components/admin/ReservationsManagement';
 import PaymentsManagement from '../components/admin/PaymentsManagement';
 import PromotionsManagement from '../components/admin/PromotionsManagement';
@@ -27,8 +26,6 @@ export default function AdminDashboard() {
         return <RoomsManagement />;
       case 'room-types':
         return <RoomTypesManagement />;
-      case 'room-statuses':
-        return <RoomStatusesManagement />;
       case 'reservations':
         return <ReservationsManagement />;
       case 'payments':
@@ -47,8 +44,12 @@ export default function AdminDashboard() {
       <AdminSidebar activeTab={activeTab} setActiveTab={setActiveTab} />
       <main className="admin-main">
         <div className="admin-header">
-          <h1>{activeTab === 'dashboard' ? 'Overview' : 'Operations'}</h1>
+          <div>
+            <h1>{activeTab === 'dashboard' ? 'Operations Overview' : 'Operations'}</h1>
+            <p className="header-subtitle">Front office and room management control center</p>
+          </div>
           <div className="admin-user-info">
+            <span className="admin-badge">{user?.role || 'Administrator'}</span>
             <span>{today}</span>
             <button onClick={logout} className="btn btn-secondary">
               Logout
@@ -65,6 +66,51 @@ function DashboardHome() {
   const weeklyRevenue = [32.4, 28.1, 41.2, 37.8, 44.6, 52.3, 48.2];
   const weekDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
+  const cards = [
+    {
+      title: 'Occupancy',
+      value: '73%',
+      note: '22 of 30 rooms',
+      trend: '+4.2%',
+      icon: (
+        <path d="M3 20V10l9-7 9 7v10M7 20v-6h10v6" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+      ),
+    },
+    {
+      title: 'Revenue Today',
+      value: 'P48,200',
+      note: '+12% vs yesterday',
+      trend: '+12%',
+      icon: (
+        <>
+          <rect x="3" y="5" width="18" height="14" rx="2" strokeWidth="1.8" />
+          <path d="M3 10h18M7 14h3" strokeWidth="1.8" strokeLinecap="round" />
+        </>
+      ),
+    },
+    {
+      title: 'Check-ins Today',
+      value: '7',
+      note: '3 pending arrival',
+      trend: 'On track',
+      icon: (
+        <>
+          <path d="M4 6h16v12H4z" strokeWidth="1.8" />
+          <path d="M8 3v6M16 3v6M4 10h16" strokeWidth="1.8" strokeLinecap="round" />
+        </>
+      ),
+    },
+    {
+      title: 'Active Promos',
+      value: '4',
+      note: '2 expiring in 48h',
+      trend: 'Review',
+      icon: (
+        <path d="M20 12l-8 8-2.5-2.5L15 12 9.5 6.5 12 4l8 8zM6 8a2 2 0 1 0 0 .01V8z" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+      ),
+    },
+  ];
+
   const activityItems = [
     'Reservation #1042 created for Liza Cruz (Room 101)',
     'Payment of P29,250 received from Ana Reyes (Credit Card)',
@@ -76,28 +122,21 @@ function DashboardHome() {
 
   return (
     <div className="dashboard-home">
-      <h2>Overview</h2>
+      <h2>Today at a Glance</h2>
       <div className="stats-grid">
-        <div className="stat-card">
-          <h3>Occupancy</h3>
-          <p className="stat-number">73%</p>
-          <p className="stat-note">22 of 30 rooms</p>
-        </div>
-        <div className="stat-card">
-          <h3>Revenue Today</h3>
-          <p className="stat-number">P48,200</p>
-          <p className="stat-note">+12% vs yesterday</p>
-        </div>
-        <div className="stat-card">
-          <h3>Check-ins Today</h3>
-          <p className="stat-number">7</p>
-          <p className="stat-note">3 pending</p>
-        </div>
-        <div className="stat-card">
-          <h3>Active Promos</h3>
-          <p className="stat-number">4</p>
-          <p className="stat-note">2 expiring soon</p>
-        </div>
+        {cards.map((card) => (
+          <div className="stat-card" key={card.title}>
+            <div className="stat-top-row">
+              <span className="stat-icon" aria-hidden>
+                <svg viewBox="0 0 24 24" fill="none">{card.icon}</svg>
+              </span>
+              <span className="stat-trend">{card.trend}</span>
+            </div>
+            <h3>{card.title}</h3>
+            <p className="stat-number">{card.value}</p>
+            <p className="stat-note">{card.note}</p>
+          </div>
+        ))}
       </div>
 
       <div className="dashboard-panels">
@@ -129,6 +168,16 @@ function DashboardHome() {
               </li>
             ))}
           </ul>
+        </section>
+
+        <section className="dashboard-panel quick-actions-panel">
+          <h3>Quick Actions</h3>
+          <div className="quick-actions-grid">
+            <button type="button">New Reservation</button>
+            <button type="button">Check In Guest</button>
+            <button type="button">Add Promotion</button>
+            <button type="button">Mark Room Clean</button>
+          </div>
         </section>
       </div>
     </div>

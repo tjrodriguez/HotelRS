@@ -20,6 +20,12 @@ export default function PromotionsManagement() {
     fetchPromotions();
   }, [token]);
 
+  const handleCreate = () => {
+    setEditingPromotion(null);
+    setFormData({ code: '', discount_percentage: '', valid_from: '', valid_until: '' });
+    setShowModal(true);
+  };
+
   const fetchPromotions = async () => {
     setIsLoading(true);
     try {
@@ -61,8 +67,8 @@ export default function PromotionsManagement() {
   };
 
   const handleSave = async () => {
-    if (editingPromotion) {
-      try {
+    try {
+      if (editingPromotion) {
         const response = await fetch(`/api/promotions/${editingPromotion.id}`, {
           method: 'PUT',
           headers: {
@@ -73,11 +79,22 @@ export default function PromotionsManagement() {
         });
         const updatedPromotion = await response.json();
         setPromotions(promotions.map((p) => (p.id === updatedPromotion.id ? updatedPromotion : p)));
-        setShowModal(false);
-        setEditingPromotion(null);
-      } catch (error) {
-        console.error('Error updating promotion:', error);
+      } else {
+        const response = await fetch(`/api/promotions`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(formData),
+        });
+        const newPromotion = await response.json();
+        setPromotions([newPromotion, ...promotions]);
       }
+      setShowModal(false);
+      setEditingPromotion(null);
+    } catch (error) {
+      console.error('Error saving promotion:', error);
     }
   };
 
@@ -87,11 +104,33 @@ export default function PromotionsManagement() {
     { key: 'discount_percentage', label: 'Discount', render: (val) => `${val}%` },
     { key: 'valid_from', label: 'Valid From' },
     { key: 'valid_until', label: 'Valid Until' },
+    {
+      key: 'status',
+      label: 'Status',
+      render: (_, row) => {
+        const now = new Date();
+        const from = row.valid_from ? new Date(row.valid_from) : null;
+        const until = row.valid_until ? new Date(row.valid_until) : null;
+        let label = 'Inactive';
+        let cls = 'status-default';
+        if (from && until && now >= from && now <= until) {
+          label = 'Active'; cls = 'status-available';
+        } else if (until && now > until) {
+          label = 'Expired'; cls = 'status-expired';
+        } else if (from && now < from) {
+          label = 'Upcoming'; cls = 'status-default';
+        }
+        return <span className={`table-status ${cls}`}><span className="dot"/> {label}</span>;
+      }
+    },
   ];
 
   return (
     <div className="management-container">
-      <h2>Promotions Management</h2>
+      <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+        <h2>Promotions Management</h2>
+        <button className="btn btn-primary" onClick={handleCreate}>New Promotion</button>
+      </div>
       <DataTable columns={columns} data={promotions} isLoading={isLoading} onEdit={handleEdit} onDelete={handleDelete} />
 
       {showModal && (

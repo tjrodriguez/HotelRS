@@ -3,25 +3,50 @@ import { AuthContext } from '../../contexts/AuthContext';
 import RoomCard from './RoomCard';
 import BookingModal from './BookingModal';
 
-export default function RoomBrowser() {
+export default function RoomBrowser({ showHero = true }) {
+  const formatLocalDate = (date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const addDays = (date, days) => {
+    const next = new Date(date);
+    next.setDate(next.getDate() + days);
+    return next;
+  };
+
+  const todayDate = new Date();
+  const tomorrowDate = addDays(todayDate, 1);
+
+  const Icon = ({ type }) => {
+    const icons = {
+      hotel: <path d="M3 20V10l9-7 9 7v10M7 20v-6h10v6" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />,
+      calendar: <><rect x="4" y="5" width="16" height="15" rx="2" strokeWidth="1.8" /><path d="M8 3v4M16 3v4M4 10h16" strokeWidth="1.8" strokeLinecap="round" /></>,
+      warning: <><circle cx="12" cy="12" r="9" strokeWidth="1.8" /><path d="M12 8v5M12 16h.01" strokeWidth="1.8" strokeLinecap="round" /></>,
+    };
+
+    return (
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden>
+        {icons[type]}
+      </svg>
+    );
+  };
+
   const { token } = useContext(AuthContext);
   const [rooms, setRooms] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [showBookingModal, setShowBookingModal] = useState(false);
   const [selectedRoom, setSelectedRoom] = useState(null);
   const [filters, setFilters] = useState({
-    checkInDate: '',
-    checkOutDate: '',
+    checkInDate: formatLocalDate(todayDate),
+    checkOutDate: formatLocalDate(tomorrowDate),
     roomType: '',
   });
 
   useEffect(() => {
-    // Only fetch if both dates are selected
-    if (filters.checkInDate && filters.checkOutDate) {
-      fetchRooms();
-    } else {
-      setRooms([]);
-    }
+    fetchRooms();
   }, [token, filters]);
 
   const fetchRooms = async () => {
@@ -30,8 +55,7 @@ export default function RoomBrowser() {
       let url = '/api/rooms';
       const params = new URLSearchParams();
 
-      if (filters.checkInDate) params.append('check_in', filters.checkInDate);
-      if (filters.checkOutDate) params.append('check_out', filters.checkOutDate);
+      params.append('room_status_id', '1');
       if (filters.roomType) params.append('room_type_id', filters.roomType);
 
       if (params.toString()) {
@@ -67,15 +91,18 @@ export default function RoomBrowser() {
     fetchRooms();
   };
 
-  const today = new Date().toISOString().split('T')[0];
+  const today = formatLocalDate(todayDate);
 
   return (
     <div className="room-browser">
       {/* Hero Section */}
-      {!filters.checkInDate && !filters.checkOutDate && (
+      {showHero && (
         <div className="hero-section">
-          <h2>🏨 Find Your Perfect Room</h2>
-          <p>Select your check-in and check-out dates to explore our available rooms and start your booking</p>
+          <h2 className="section-title">
+            <span className="title-icon"><Icon type="hotel" /></span>
+            Find Your Perfect Room
+          </h2>
+          <p>Browse currently available rooms and narrow them down by type from Single to Family.</p>
         </div>
       )}
 
@@ -123,7 +150,7 @@ export default function RoomBrowser() {
             >
               <option value="">All Types</option>
               <option value="1">Single</option>
-              <option value="2">Double</option>
+              <option value="2">Standard</option>
               <option value="3">Deluxe</option>
               <option value="4">Suite</option>
               <option value="5">Family</option>
@@ -134,17 +161,12 @@ export default function RoomBrowser() {
 
       {/* Results Display */}
       <div className="rooms-display">
-        {!filters.checkInDate || !filters.checkOutDate ? (
-          <div className="empty-state">
-            <p>📅 Select dates to view rooms</p>
-            <p>Choose your check-in and check-out dates above to see available rooms</p>
-          </div>
-        ) : isLoading ? (
+        {isLoading ? (
           <div className="loading">Finding available rooms...</div>
         ) : rooms.length === 0 ? (
           <div className="empty-state">
-            <p>🚫 No rooms available</p>
-            <p>Try different dates or room type filters</p>
+            <p className="empty-title"><span className="title-icon"><Icon type="warning" /></span>No rooms available</p>
+            <p>Try different dates or room type filters.</p>
           </div>
         ) : (
           <div className="rooms-grid">

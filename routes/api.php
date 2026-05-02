@@ -2,7 +2,6 @@
 
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\RoomTypeController;
-use App\Http\Controllers\Api\RoomStatusController;
 use App\Http\Controllers\Api\RoomController;
 use App\Http\Controllers\Api\ReservationController;
 use App\Http\Controllers\Api\PaymentController;
@@ -37,7 +36,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/rooms/check-availability', [RoomController::class, 'checkAvailability']);
     Route::get('/room-types', [RoomTypeController::class, 'index']);
     Route::get('/room-types/{id}', [RoomTypeController::class, 'show']);
-    Route::get('/room-statuses', [RoomStatusController::class, 'index']);
     Route::get('/promotions', [PromotionController::class, 'index']);
     Route::get('/promotions/{id}', [PromotionController::class, 'show']);
     Route::post('/promotions/validate', [PromotionController::class, 'validate']);
@@ -60,10 +58,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/room-types/{id}', [RoomTypeController::class, 'update']);
         Route::delete('/room-types/{id}', [RoomTypeController::class, 'destroy']);
 
-        // Room Statuses
-        Route::post('/room-statuses', [RoomStatusController::class, 'store']);
-        Route::put('/room-statuses/{id}', [RoomStatusController::class, 'update']);
-        Route::delete('/room-statuses/{id}', [RoomStatusController::class, 'destroy']);
+        // Room Statuses API removed; statuses are managed via Rooms UI and DB
 
         // Rooms
         Route::post('/rooms', [RoomController::class, 'store']);
