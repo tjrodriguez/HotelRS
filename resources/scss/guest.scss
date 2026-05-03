@@ -691,11 +691,11 @@
 /* Pricing Breakdown Component */
 .pricing-breakdown {
   background: linear-gradient(135deg, #f9fafb, #f0fdfa);
-  border: 1px solid rgba(20, 184, 166, 0.2);
-  border-radius: 12px;
-  padding: 20px;
-  margin: 12px 0;
-  backdrop-filter: blur(8px);
+  border: 1px solid rgba(20, 184, 166, 0.12);
+  border-radius: 10px;
+  padding: 12px;
+  margin: 8px 0;
+  backdrop-filter: blur(6px);
 
   .pricing-title {
     font-weight: 700;
@@ -805,43 +805,31 @@
 // Booking History
 .booking-history {
   background: white;
-  border-radius: 16px;
-  padding: 18px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07);
-  border: 1px solid rgba(231, 229, 228, 0.6);
-  animation: fadeIn 0.4s ease-out;
+  border-radius: 14px;
+  padding: 12px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(231, 229, 228, 0.5);
+  animation: fadeIn 0.3s ease-out;
 
   h2 {
     color: #0f172a;
-    margin-bottom: 24px;
-    font-size: 32px;
-    font-weight: 700;
-    letter-spacing: -0.8px;
-    font-family: var(--font-display);
-  }
     margin-bottom: 12px;
     font-size: 28px;
+    font-weight: 700;
+    letter-spacing: -0.6px;
+    font-family: var(--font-display);
+  }
 
   .error-message {
-    background: linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(239, 68, 68, 0.05));
-    border: 1px solid rgba(239, 68, 68, 0.2);
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.05), rgba(239, 68, 68, 0.03));
+    border: 1px solid rgba(239, 68, 68, 0.12);
     color: #991b1b;
-    padding: 14px 16px;
-    border-radius: 10px;
-    margin-bottom: 20px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    margin-bottom: 12px;
     display: flex;
     align-items: flex-start;
-    gap: 12px;
-    
-    &::before {
-      content: "";
-      display: inline-block;
-      width: 12px;
-      height: 12px;
-      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23059669' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'><path d='M20 6L9 17l-5-5'/></svg>");
-      background-size: 12px 12px;
-      flex-shrink: 0;
-    }
+    gap: 10px;
   }
 }
 
@@ -852,67 +840,90 @@
 .history-subtitle {
   margin: 8px 0 0;
   color: var(--text-light);
-  font-size: 14px;
-  line-height: 1.6;
+    margin-bottom: 8px;
 }
 
 .history-summary {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-  gap: 10px;
+    margin: 6px 0 0;
+    color: var(--text-light);
+    font-size: 13px;
+    line-height: 1.4;
   margin-bottom: 14px;
 
 .summary-pill {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  padding: 16px 18px;
-  border-radius: 12px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 10px;
+    margin-bottom: 10px;
+
+    .summary-pill {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 6px;
+      padding: 10px 12px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, rgba(20, 184, 166, 0.04), rgba(20, 184, 166, 0.01));
+      border: 1px solid rgba(20, 184, 166, 0.08);
+    }
+
+    .summary-number {
+      font-size: 20px;
+      color: #0f172a;
+      font-family: var(--font-display);
+      line-height: 1;
+    }
+
+    .summary-label {
+      font-size: 12px;
+      color: var(--text-light);
+      min-height: 0;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
   background: linear-gradient(135deg, rgba(20, 184, 166, 0.08), rgba(20, 184, 166, 0.03));
   border: 1px solid rgba(20, 184, 166, 0.15);
 
   &.accent {
-    background: linear-gradient(135deg, rgba(102, 126, 234, 0.08), rgba(102, 126, 234, 0.03));
-    border-color: rgba(102, 126, 234, 0.18);
-  }
-}
+    min-height: 60px;
+    gap: 8px;
+    flex-direction: column;
+    justify-content: center;
 
 .summary-number {
   font-size: 28px;
-  font-size: 24px;
-  color: #0f172a;
-  font-family: var(--font-display);
+    border: 1px dashed rgba(20, 184, 166, 0.12);
+    background: linear-gradient(135deg, rgba(20, 184, 166, 0.03), rgba(102, 126, 234, 0.02));
+    padding: 10px 12px;
   line-height: 1;
 }
 
-.summary-label {
-  font-size: 13px;
+    display: grid;
+    gap: 12px;
   color: var(--text-light);
   min-height: 140px;
   text-transform: uppercase;
-  letter-spacing: 0.4px;
-}
-
-.booking-loading,
-.booking-empty-state {
-  min-height: 220px;
+    border: 1px solid rgba(20, 184, 166, 0.08);
+    font-size: 15px;
+    overflow: hidden;
+    transition: var(--transition);
+    background: #fff;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
   gap: 12px;
   flex-direction: column;
-  justify-content: center;
-}
-
+      box-shadow: 0 8px 18px rgba(0, 0, 0, 0.08);
+      border-color: rgba(20, 184, 166, 0.16);
+      transform: translateY(-2px);
 .booking-empty-state {
   border: 1px dashed rgba(20, 184, 166, 0.22);
   background: linear-gradient(135deg, rgba(20, 184, 166, 0.04), rgba(102, 126, 234, 0.03));
   padding: 14px 16px;
-
-.reservations-list {
-  display: grid;
-  gap: 16px;
-}
-
-.reservation-card {
+    display: flex;
+    justify-content: space-between;
+    padding: 12px 14px;
+    gap: 12px;
+    background: linear-gradient(135deg, rgba(20, 184, 166, 0.03), rgba(20, 184, 166, 0.01));
+    border-bottom: 1px solid rgba(20, 184, 166, 0.06);
   border: 1px solid rgba(20, 184, 166, 0.15);
       font-size: 17px;
   overflow: hidden;

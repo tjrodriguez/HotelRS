@@ -148,6 +148,52 @@ export default function ReservationsManagement() {
     }
   };
 
+  const handleAccept = async (reservation) => {
+    try {
+      const response = await fetch(`/api/reservations/${reservation.id}/confirm`, {
+        method: 'PUT',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to accept reservation');
+      }
+
+      const updatedReservation = await response.json();
+      setReservations((previous) => previous.map((item) => (
+        item.id === updatedReservation.id ? updatedReservation : item
+      )));
+    } catch (error) {
+      console.error('Error accepting reservation:', error);
+      alert('Could not accept this reservation.');
+    }
+  };
+
+  const handleDecline = async (reservation) => {
+    if (!confirm('Decline this reservation?')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/reservations/${reservation.id}/decline`, {
+        method: 'PUT',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to decline reservation');
+      }
+
+      const updatedReservation = await response.json();
+      setReservations((previous) => previous.map((item) => (
+        item.id === updatedReservation.id ? updatedReservation : item
+      )));
+    } catch (error) {
+      console.error('Error declining reservation:', error);
+      alert('Could not decline this reservation.');
+    }
+  };
+
   const columns = [
     { key: 'id', label: 'ID' },
     { 
@@ -183,7 +229,23 @@ export default function ReservationsManagement() {
     { 
       key: 'total_price', 
       label: 'Total',
-      render: (value) => `$${parseFloat(value).toFixed(2)}`
+      render: (value, row) => {
+        const displayedTotal = parseFloat(
+          row.calculated_total_price ?? row.total_price ?? 0,
+        );
+
+        return `$${displayedTotal.toFixed(2)}`;
+      }
+    },
+    {
+      key: 'paid_amount',
+      label: 'Paid',
+      render: (value, row) => `$${parseFloat(row.paid_amount ?? 0).toFixed(2)}`,
+    },
+    {
+      key: 'balance_due',
+      label: 'Balance',
+      render: (value, row) => `$${parseFloat(row.balance_due ?? 0).toFixed(2)}`,
     },
     { 
       key: 'status', 
@@ -273,7 +335,33 @@ export default function ReservationsManagement() {
           )}
         </div>
       </div>
-      <DataTable columns={columns} data={reservations} isLoading={isLoading} onEdit={handleEdit} onDelete={handleDelete} />
+      <DataTable
+        columns={columns}
+        data={reservations}
+        isLoading={isLoading}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+        renderActions={(row) => (
+          row.status === 'pending' ? (
+            <div className="table-action-group">
+              <button
+                className="btn btn-sm btn-success"
+                onClick={() => handleAccept(row)}
+                type="button"
+              >
+                Accept
+              </button>
+              <button
+                className="btn btn-sm btn-danger"
+                onClick={() => handleDecline(row)}
+                type="button"
+              >
+                Decline
+              </button>
+            </div>
+          ) : null
+        )}
+      />
 
       {showModal && (
         <Modal title="Edit Reservation" onClose={() => setShowModal(false)}>

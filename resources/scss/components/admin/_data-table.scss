@@ -79,6 +79,20 @@
 .data-table .actions {
   display: flex;
   gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.table-action-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.table-action-group .btn {
+  padding: 6px 10px;
+  font-size: 12px;
+  line-height: 1;
 }
 
 .data-table .btn-icon {

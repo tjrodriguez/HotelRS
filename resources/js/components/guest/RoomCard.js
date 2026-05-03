@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState } from 'react';
+import RoomAvailabilityCalendar from './RoomAvailabilityCalendar';
 
 // Status configuration
 const STATUS_CONFIG = {
@@ -7,7 +8,7 @@ const STATUS_CONFIG = {
   'occupied': { color: '#ef4444', textColor: '#7f1d1d', label: 'Occupied' },
   'unavailable': { color: '#ef4444', textColor: '#7f1d1d', label: 'Unavailable' },
   'maintenance': { color: '#f59e0b', textColor: '#92400e', label: 'Maintenance' },
-  'reserved': { color: '#8b5cf6', textColor: '#5b21b6', label: 'Reserved' },
+  'reserved': { color: '#f59e0b', textColor: '#92400e', label: 'Reserved' },
 };
 
 const DEFAULT_STATUS_CONFIG = { color: '#f59e0b', textColor: '#92400e', label: 'Unknown' };
@@ -29,22 +30,42 @@ const PRICE_ICON = (
 );
 
 export default function RoomCard({ room, onBook }) {
+  const [showCalendar, setShowCalendar] = useState(false);
+
   // Data extraction with fallbacks
   const pricePerNight = parseFloat(room.room_type?.price_per_night || room.price_per_night || 0);
   const roomTypeName = room.room_type?.name || 'Standard';
   const capacity = room.room_type?.capacity || 1;
-  const status = room.room_status?.status_name || 'Available';
+  const status = room.availability_status || room.room_status?.status_name || 'Available';
   
   // Normalized status key for config lookup
   const statusKey = String(status).toLowerCase().trim().replace(/\s+/g, '-');
   const statusConfig = STATUS_CONFIG[statusKey] || DEFAULT_STATUS_CONFIG;
-  const isAvailable = statusKey === 'available' || statusKey === 'vacant';
+  const isAvailable = room.is_available_for_booking ?? (statusKey === 'available' || statusKey === 'vacant');
+  const isOccupied = statusKey === 'occupied';
+  const isReserved = statusKey === 'reserved';
   
   // Format price with 2 decimal places
   const formattedPrice = `$${pricePerNight.toFixed(2)}`;
 
+  const handleSelectDates = (checkInDate, checkOutDate) => {
+    setShowCalendar(false);
+    // Call onBook with selected dates
+    onBook(checkInDate, checkOutDate);
+  };
+
+  const handleBookClick = () => {
+    if (isAvailable) {
+      // For available rooms, book immediately with default dates
+      onBook();
+    } else {
+      // For unavailable rooms, show the availability calendar
+      setShowCalendar(true);
+    }
+  };
+
   return (
-    <div className="room-card">
+    <div className={`room-card ${!isAvailable ? 'room-card--locked' : ''} ${isOccupied ? 'room-card--occupied' : ''} ${isReserved ? 'room-card--reserved' : ''}`}>
       <div className="room-card-header">
         <div className="room-info">
           <h3>Room {room.room_number}</h3>
@@ -76,6 +97,12 @@ export default function RoomCard({ room, onBook }) {
           </span>
         </span>
       </div>
+
+      {(isOccupied || isReserved) && (
+        <div className="room-availability-note unavailable">
+          {isOccupied ? 'Occupied room — currently unavailable' : 'Reserved room — awaiting confirmation'}
+        </div>
+      )}
 
       <div className="room-card-details">
         <div className="detail-item">
@@ -112,13 +139,24 @@ export default function RoomCard({ room, onBook }) {
       )}
 
       <button
-        onClick={onBook}
-        disabled={!isAvailable}
-        className={`btn btn-primary btn-book ${isAvailable ? 'btn-available' : 'btn-disabled'}`}
+        onClick={handleBookClick}
+        className={`btn btn-primary btn-book ${isAvailable ? 'btn-available' : 'btn-disabled-available'}`}
         aria-label={`Book Room ${room.room_number} (${roomTypeName}) - ${isAvailable ? 'Available' : statusConfig.label}`}
       >
-        {isAvailable ? 'Book Now' : `${statusConfig.label} - Unavailable`}
+        {isAvailable ? 'Book Now' : `${statusConfig.label} - See Availability`}
       </button>
+
+      {showCalendar && (
+        <div className="calendar-modal-overlay">
+          <div className="calendar-modal">
+            <RoomAvailabilityCalendar
+              room={room}
+              onSelectDates={handleSelectDates}
+              onClose={() => setShowCalendar(false)}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

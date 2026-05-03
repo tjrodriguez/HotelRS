@@ -55,7 +55,8 @@ export default function RoomBrowser({ showHero = true }) {
       let url = '/api/rooms';
       const params = new URLSearchParams();
 
-      params.append('room_status_id', '1');
+      params.append('check_in', filters.checkInDate);
+      params.append('check_out', filters.checkOutDate);
       if (filters.roomType) params.append('room_type_id', filters.roomType);
 
       if (params.toString()) {
@@ -80,8 +81,12 @@ export default function RoomBrowser({ showHero = true }) {
     setFilters((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleRoomSelect = (room) => {
+  const handleRoomSelect = (room, checkInDate = null, checkOutDate = null) => {
     setSelectedRoom(room);
+    // If dates are provided (from calendar), use them; otherwise use filter dates
+    if (checkInDate && checkOutDate) {
+      setFilters((prev) => ({ ...prev, checkInDate, checkOutDate }));
+    }
     setShowBookingModal(true);
   };
 

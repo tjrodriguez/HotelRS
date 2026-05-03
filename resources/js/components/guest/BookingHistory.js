@@ -33,6 +33,42 @@ export default function BookingHistory() {
     fetchMyReservations();
   }, [token]);
 
+  const bookingStyles = (
+    <style>{`
+      /* My Bookings compact header + spacing overrides (scoped) */
+      .history-header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 8px;padding-bottom:8px;border-bottom:1px solid rgba(15,23,42,.06)}
+      .section-title{font-size:18px;margin:0;display:flex;align-items:center;gap:8px;color:#0f172a;letter-spacing:-.2px}
+      .history-subtitle{display:block;margin:0;font-size:12px;color:#64748b}
+      .history-summary{display:flex;gap:8px;margin:0;align-items:center}
+      .summary-pill{background:#fff;border:1px solid #e8edf2;border-radius:12px;padding:7px 11px;display:flex;flex-direction:column;align-items:flex-start;gap:2px;min-width:90px;box-shadow:0 2px 8px rgba(15,23,42,.04)}
+      .summary-pill.accent{background:linear-gradient(135deg,#f0f9ff,#ecfeff);border-color:rgba(20,184,166,.22)}
+      .summary-number{font-size:16px;font-weight:800;color:var(--primary)}
+      .summary-label{font-size:11px;color:var(--text-muted)}
+      .reservations-list{display:flex;flex-direction:column;gap:10px}
+      .reservation-card{display:block!important;min-height:auto!important;height:auto!important;border:1px solid #e5e7eb;border-radius:12px;padding:10px 12px;background:linear-gradient(180deg,#fff,#fcfdff)}
+      .reservation-card-header{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:8px}
+      .reservation-info h3{margin:0 0 4px;font-size:16px}
+      .reservation-id{color:var(--text-muted);font-size:13px;margin:0}
+      .reservation-details{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-top:0!important;margin-bottom:8px}
+      .detail-group .label{color:var(--text-muted);display:block;font-size:12px;margin-bottom:6px}
+      .detail-group .value{color:var(--dark);font-size:14px;font-weight:600}
+      .pricing-breakdown{margin:6px 0!important;padding:10px!important;border-radius:10px!important}
+      .pricing-row{padding:6px 0!important}
+      .special-requests{margin-top:8px;padding-top:8px;border-top:1px dashed var(--border)}
+      .status-badge{border-radius:999px;padding:4px 10px;font-size:12px;font-weight:700;background:#f8fafc;border:1px solid #e2e8f0;color:#334155}
+      .status-pending{background:#fffbeb;border-color:#fde68a;color:#92400e}
+      .status-confirmed{background:#ecfdf5;border-color:#a7f3d0;color:#065f46}
+      .status-cancelled{background:#fef2f2;border-color:#fecaca;color:#991b1b}
+      .reservation-actions{margin-top:6px;display:flex;justify-content:flex-end;gap:8px}
+      @media(max-width:640px){
+        .history-header{align-items:flex-start}
+        .history-summary{flex-direction:column;align-items:flex-start}
+        .reservation-details{grid-template-columns:1fr}
+        .reservation-card{padding:10px}
+      }
+    `}</style>
+  );
+
   const fetchMyReservations = async () => {
     setIsLoading(true);
     setError('');
@@ -99,6 +135,7 @@ export default function BookingHistory() {
   if (isLoading) {
     return (
       <div className="booking-history">
+        {bookingStyles}
         <div className="history-header">
           <h2 className="section-title"><span className="title-icon"><Icon type="list" /></span>My Bookings</h2>
           <p className="history-subtitle">Your reservations and stay details will appear here.</p>
@@ -111,6 +148,7 @@ export default function BookingHistory() {
   if (error) {
     return (
       <div className="booking-history">
+        {bookingStyles}
         <div className="history-header">
           <h2 className="section-title"><span className="title-icon"><Icon type="list" /></span>My Bookings</h2>
           <p className="history-subtitle">Your reservations and stay details will appear here.</p>
@@ -123,6 +161,7 @@ export default function BookingHistory() {
   if (reservations.length === 0) {
     return (
       <div className="booking-history">
+        {bookingStyles}
         <div className="history-header">
           <h2 className="section-title"><span className="title-icon"><Icon type="list" /></span>My Bookings</h2>
           <p className="history-subtitle">Track upcoming trips, cancellations, and completed stays.</p>
@@ -147,6 +186,7 @@ export default function BookingHistory() {
 
   return (
     <div className="booking-history">
+      {bookingStyles}
       <div className="history-header">
         <h2 className="section-title"><span className="title-icon"><Icon type="list" /></span>My Bookings ({totalReservations})</h2>
         <p className="history-subtitle">Track upcoming trips, cancellations, and completed stays.</p>

@@ -33,6 +33,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Public endpoints (accessible to all authenticated users)
     Route::get('/rooms', [RoomController::class, 'index']);
     Route::get('/rooms/{id}', [RoomController::class, 'show']);
+    Route::get('/rooms/{id}/reservations', [ReservationController::class, 'getRoomReservations']);
     Route::post('/rooms/check-availability', [RoomController::class, 'checkAvailability']);
     Route::get('/room-types', [RoomTypeController::class, 'index']);
     Route::get('/room-types/{id}', [RoomTypeController::class, 'show']);
@@ -72,6 +73,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
         // Reservations Management
         Route::put('/reservations/{id}/confirm', [ReservationController::class, 'confirm']);
+        Route::put('/reservations/{id}/decline', [ReservationController::class, 'decline']);
 
         // Payments Management
         Route::put('/payments/{id}/refund', [PaymentController::class, 'refund']);

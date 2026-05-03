@@ -21,6 +21,15 @@ button:disabled {
   cursor: not-allowed;
 }
 
+.btn-disabled-available {
+  opacity: 0.75;
+  cursor: pointer;
+
+  &:hover {
+    opacity: 1;
+  }
+}
+
 .btn {
   padding: 10px 16px;
   border-radius: 8px;
