@@ -2,32 +2,44 @@
 
 namespace App\Models;
 
+use App\Enums\ReservationStatus;
+use App\Enums\RoomStatus;
+use Database\Factories\RoomFactory;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Room extends Model
 {
-    protected $fillable = ['room_number', 'room_type_id', 'room_status_id', 'floor', 'price_per_night', 'description', 'amenities'];
+    /** @use HasFactory<RoomFactory> */
+    use HasFactory, SoftDeletes;
 
-    protected $casts = [
-        'amenities' => 'array',
-        'price_per_night' => 'decimal:2',
-    ];
+    protected $fillable = ['room_number', 'room_type_id', 'status', 'floor', 'description', 'amenities'];
+
+    protected function casts(): array
+    {
+        return [
+            'status' => RoomStatus::class,
+            'amenities' => 'array',
+        ];
+    }
 
     public function roomType(): BelongsTo
     {
         return $this->belongsTo(RoomType::class);
     }
 
-    public function roomStatus(): BelongsTo
-    {
-        return $this->belongsTo(RoomStatus::class);
-    }
-
     public function reservations(): HasMany
     {
         return $this->hasMany(Reservation::class);
+    }
+
+    public function scopeAvailable(Builder $query): Builder
+    {
+        return $query->where('status', RoomStatus::Available);
     }
 
     public function isAvailable($checkIn, $checkOut): bool
@@ -43,5 +55,18 @@ class Room extends Model
             })
             ->whereIn('status', ['confirmed', 'pending'])
             ->exists();
+    }
+
+    public function refreshDerivedStatus(): void
+    {
+        $hasActive = $this->reservations()
+            ->whereIn('status', [ReservationStatus::Pending, ReservationStatus::Confirmed])
+            ->where('check_in_date', '<=', now())
+            ->where('check_out_date', '>=', now())
+            ->exists();
+
+        $this->update([
+            'status' => $hasActive ? RoomStatus::Occupied : RoomStatus::Available,
+        ]);
     }
 }

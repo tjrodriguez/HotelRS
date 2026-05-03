@@ -1,10 +1,9 @@
-import React, { useState, useEffect, useContext, useMemo } from 'react';
-import { AuthContext } from '../../contexts/AuthContext';
+import React, { useState, useEffect, useMemo } from 'react';
+import { apiClient } from '../../services/apiClient';
 import DataTable from './DataTable';
 import Modal from '../Modal';
 
 export default function ActivityLogsManagement() {
-  const { token } = useContext(AuthContext);
   const [logs, setLogs] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [search, setSearch] = useState('');
@@ -15,15 +14,12 @@ export default function ActivityLogsManagement() {
   useEffect(() => {
     fetchLogs();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [token]);
+  }, []);
 
   const fetchLogs = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch('/api/activity-logs', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await response.json();
+      const data = await apiClient.getActivityLogs();
       setLogs(Array.isArray(data) ? data : data.data || []);
     } catch (error) {
       console.error('Error fetching logs:', error);

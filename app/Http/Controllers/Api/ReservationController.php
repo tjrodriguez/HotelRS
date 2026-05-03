@@ -3,11 +3,14 @@
 namespace App\Http\Controllers\Api;
 
 use App\Actions\Reservations\CreateReservation;
+use App\Enums\PaymentStatus;
+use App\Enums\ReservationStatus;
+use App\Events\ReservationStatusChanged;
 use App\Http\Requests\Api\StoreReservationRequest;
+use App\Http\Resources\ReservationResource;
 use App\Models\Reservation;
 use App\Models\Room;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 
 class ReservationController
 {
@@ -23,8 +26,8 @@ class ReservationController
             $query->where('status', $request->status);
         }
 
-        if ($request->has('user_id') && $request->user()->isAdmin()) {
-            $query->where('guest_id', $request->user_id);
+        if ($request->has('guest_id') && $request->user()->isAdmin()) {
+            $query->where('guest_id', $request->guest_id);
         }
 
         $paginated = $query->paginate(20);
@@ -33,7 +36,15 @@ class ReservationController
             return $this->decorateFinancials($reservation);
         });
 
-        return response()->json($paginated);
+        return response()->json([
+            'data' => ReservationResource::collection($paginated),
+            'meta' => [
+                'current_page' => $paginated->currentPage(),
+                'last_page' => $paginated->lastPage(),
+                'per_page' => $paginated->perPage(),
+                'total' => $paginated->total(),
+            ],
+        ]);
     }
 
     public function show(int $id, Request $request)
@@ -48,21 +59,16 @@ class ReservationController
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
-        return response()->json($this->decorateFinancials($reservation));
+        return response()->json(new ReservationResource($this->decorateFinancials($reservation)));
     }
 
     public function store(StoreReservationRequest $request, CreateReservation $createReservation)
     {
         $reservation = $createReservation->handle($request->user(), $request->validated());
 
-        $this->syncRoomStatus($reservation->room);
-
-        return response()->json(
-            $this->decorateFinancials(
-                $reservation->fresh(['guest', 'room.roomType', 'room.roomStatus', 'promotion', 'payments'])
-            ),
-            201
-        );
+        return (new ReservationResource(
+            $this->decorateFinancials($reservation->fresh(['guest', 'room.roomType', 'promotion', 'payments']))
+        ))->response()->setStatusCode(201);
     }
 
     public function cancel(int $id, Request $request)
@@ -77,14 +83,15 @@ class ReservationController
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
-        if ($reservation->status === 'completed' || $reservation->status === 'cancelled') {
+        if ($reservation->status === ReservationStatus::Completed || $reservation->status === ReservationStatus::Cancelled) {
             return response()->json(['message' => 'Cannot cancel this reservation'], 422);
         }
 
-        $reservation->update(['status' => 'cancelled']);
-        $this->syncRoomStatus($reservation->room);
+        $previousStatus = $reservation->status->value;
+        $reservation->update(['status' => ReservationStatus::Cancelled]);
+        ReservationStatusChanged::dispatch($reservation, $previousStatus);
 
-        return response()->json($this->decorateFinancials($reservation));
+        return response()->json(new ReservationResource($this->decorateFinancials($reservation)));
     }
 
     public function confirm(int $id, Request $request)
@@ -95,10 +102,11 @@ class ReservationController
             return response()->json(['message' => 'Not found'], 404);
         }
 
-        $reservation->update(['status' => 'confirmed']);
-        $this->syncRoomStatus($reservation->room);
+        $previousStatus = $reservation->status->value;
+        $reservation->update(['status' => ReservationStatus::Confirmed]);
+        ReservationStatusChanged::dispatch($reservation, $previousStatus);
 
-        return response()->json($this->decorateFinancials($reservation));
+        return response()->json(new ReservationResource($this->decorateFinancials($reservation)));
     }
 
     public function decline(int $id, Request $request)
@@ -109,14 +117,15 @@ class ReservationController
             return response()->json(['message' => 'Not found'], 404);
         }
 
-        if ($reservation->status === 'completed' || $reservation->status === 'cancelled') {
+        if ($reservation->status === ReservationStatus::Completed || $reservation->status === ReservationStatus::Cancelled) {
             return response()->json(['message' => 'Cannot decline this reservation'], 422);
         }
 
-        $reservation->update(['status' => 'cancelled']);
-        $this->syncRoomStatus($reservation->room);
+        $previousStatus = $reservation->status->value;
+        $reservation->update(['status' => ReservationStatus::Cancelled]);
+        ReservationStatusChanged::dispatch($reservation, $previousStatus);
 
-        return response()->json($this->decorateFinancials($reservation));
+        return response()->json(new ReservationResource($this->decorateFinancials($reservation)));
     }
 
     private function decorateFinancials(Reservation $reservation): Reservation
@@ -127,7 +136,7 @@ class ReservationController
         $effectiveTotal = $storedTotal > 0 ? $storedTotal : $calculatedTotal;
 
         $paidAmount = (float) $reservation->payments
-            ->where('status', 'completed')
+            ->where('status', PaymentStatus::Completed)
             ->sum('amount');
 
         $reservation->setAttribute('calculated_total_price', round($effectiveTotal, 2));
@@ -147,43 +156,11 @@ class ReservationController
 
         // Get all active reservations (pending or confirmed, not cancelled or completed)
         $reservations = Reservation::where('room_id', $id)
-            ->whereIn('status', ['pending', 'confirmed'])
+            ->whereIn('status', [ReservationStatus::Pending, ReservationStatus::Confirmed])
             ->select(['id', 'room_id', 'check_in_date', 'check_out_date', 'status'])
             ->orderBy('check_in_date')
             ->get();
 
-        return response()->json($reservations);
-    }
-
-    private function syncRoomStatus(?Room $room): void
-    {
-        if (! $room) {
-            return;
-        }
-
-        $hasConfirmedReservation = $room->reservations()
-            ->where('status', 'confirmed')
-            ->exists();
-
-        $hasPendingReservation = $room->reservations()
-            ->where('status', 'pending')
-            ->exists();
-
-        $targetStatus = 'Available';
-
-        if ($hasConfirmedReservation) {
-            $targetStatus = 'Occupied';
-        } elseif ($hasPendingReservation) {
-            $targetStatus = 'Reserved';
-        }
-
-        $statusId = DB::table('room_statuses')
-            ->whereRaw('LOWER(status_name) = ?', [strtolower($targetStatus)])
-            ->value('id');
-
-        if ($statusId) {
-            $room->update(['room_status_id' => $statusId]);
-            $room->load('roomStatus');
-        }
+        return response()->json(ReservationResource::collection($reservations));
     }
 }

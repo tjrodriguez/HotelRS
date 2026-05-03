@@ -1,6 +1,6 @@
-import React, { useState, useContext } from 'react';
-import { AuthContext } from '../contexts/AuthContext';
-import AdminSidebar from '../components/admin/AdminSidebar';
+import React, { useState } from 'react';
+import { useOutletContext } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 import UsersManagement from '../components/admin/UsersManagement';
 import RoomsManagement from '../components/admin/RoomsManagement';
 import RoomTypesManagement from '../components/admin/RoomTypesManagement';
@@ -10,8 +10,8 @@ import PromotionsManagement from '../components/admin/PromotionsManagement';
 import ActivityLogsManagement from '../components/admin/ActivityLogsManagement';
 
 export default function AdminDashboard() {
-  const { logout, user } = useContext(AuthContext);
-  const [activeTab, setActiveTab] = useState('dashboard');
+  const { user } = useAuth();
+  const { activeTab, setActiveTab } = useOutletContext();
   const today = new Date().toLocaleDateString('en-US', {
     month: 'short',
     day: 'numeric',
@@ -40,25 +40,19 @@ export default function AdminDashboard() {
   };
 
   return (
-    <div className="admin-dashboard">
-      <AdminSidebar activeTab={activeTab} setActiveTab={setActiveTab} user={user} />
-      <main className="admin-main">
-        <div className="admin-header">
-          <div>
-            <h1>{activeTab === 'dashboard' ? 'Operations Overview' : 'Operations'}</h1>
-            <p className="header-subtitle">Front office and room management control center</p>
-          </div>
-          <div className="admin-user-info">
-            <span className="admin-badge">{user?.role || 'Administrator'}</span>
-            <span className="header-date">{today}</span>
-            <button onClick={logout} className="btn-logout">
-              Logout
-            </button>
-          </div>
+    <>
+      <div className="admin-header">
+        <div>
+          <h1>{activeTab === 'dashboard' ? 'Operations Overview' : 'Operations'}</h1>
+          <p className="header-subtitle">Front office and room management control center</p>
         </div>
-        <div className="admin-content">{renderContent()}</div>
-      </main>
-    </div>
+        <div className="admin-user-info">
+          <span className="admin-badge">{user?.role || 'Administrator'}</span>
+          <span className="header-date">{today}</span>
+        </div>
+      </div>
+      <div className="admin-content">{renderContent()}</div>
+    </>
   );
 }
 

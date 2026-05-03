@@ -1,6 +1,15 @@
-import React, { createContext, useState, useCallback } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import { apiClient } from '../services/apiClient';
 
 export const AuthContext = createContext();
+
+export function useAuth() {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+}
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => {
@@ -11,39 +20,20 @@ export function AuthProvider({ children }) {
   const [token, setToken] = useState(() => localStorage.getItem('token'));
 
   const login = useCallback(async (email, password) => {
-    const response = await fetch('/api/auth/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password }),
-    });
-
-    if (!response.ok) throw new Error('Login failed');
-
-    const data = await response.json();
+    const data = await apiClient.login(email, password);
     setUser(data.user);
     setToken(data.token);
+    apiClient.setToken(data.token);
     localStorage.setItem('user', JSON.stringify(data.user));
     localStorage.setItem('token', data.token);
     return data;
   }, []);
 
   const register = useCallback(async (name, email, password, passwordConfirmation) => {
-    const response = await fetch('/api/auth/register', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        name,
-        email,
-        password,
-        password_confirmation: passwordConfirmation,
-      }),
-    });
-
-    if (!response.ok) throw new Error('Registration failed');
-
-    const data = await response.json();
+    const data = await apiClient.register(name, email, password, passwordConfirmation);
     setUser(data.user);
     setToken(data.token);
+    apiClient.setToken(data.token);
     localStorage.setItem('user', JSON.stringify(data.user));
     localStorage.setItem('token', data.token);
     return data;
@@ -51,18 +41,29 @@ export function AuthProvider({ children }) {
 
   const logout = useCallback(async () => {
     if (token) {
-      await fetch('/api/auth/logout', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      try {
+        await apiClient.logout();
+      } catch {
+        // ignore logout errors
+      }
     }
     setUser(null);
     setToken(null);
+    apiClient.setToken(null);
     localStorage.removeItem('user');
     localStorage.removeItem('token');
   }, [token]);
+
+  useEffect(() => {
+    apiClient.setToken(token);
+  }, [token]);
+
+  useEffect(() => {
+    apiClient.onUnauthorized = logout;
+    return () => {
+      apiClient.onUnauthorized = null;
+    };
+  }, [logout]);
 
   const isAuthenticated = !!user && !!token;
   const isAdmin = user?.role === 'admin';

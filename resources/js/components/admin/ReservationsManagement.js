@@ -1,11 +1,10 @@
-import React, { useState, useEffect, useContext } from 'react';
-import { AuthContext } from '../../contexts/AuthContext';
+import React, { useState, useEffect } from 'react';
+import { apiClient } from '../../services/apiClient';
 import DataTable from './DataTable';
 import Modal from '../Modal';
 import StatusBadge from './StatusBadge';
 
 export default function ReservationsManagement() {
-  const { token } = useContext(AuthContext);
   const [reservations, setReservations] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
@@ -22,23 +21,14 @@ export default function ReservationsManagement() {
 
   useEffect(() => {
     fetchReservations();
-  }, [token]);
+  }, []);
 
   const fetchReservations = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch('/api/reservations', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await response.json();
-      
-      // Handle paginated response
+      const data = await apiClient.getReservations();
       const reservationList = Array.isArray(data) ? data : data.data || [];
-      
-      console.log('Fetched reservations:', reservationList);
       setReservations(reservationList);
-      
-      // reset calendar selection
       setSelectedDate(null);
     } catch (error) {
       console.error('Error fetching reservations:', error);
@@ -117,11 +107,8 @@ export default function ReservationsManagement() {
   const handleDelete = async (reservation) => {
     if (confirm(`Are you sure you want to delete this reservation?`)) {
       try {
-        await fetch(`/api/reservations/${reservation.id}`, {
-          method: 'DELETE',
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        setReservations(reservations.filter((r) => r.id !== reservation.id));
+        await apiClient.delete(`/reservations/${reservation.id}`);
+        setReservations((previous) => previous.filter((r) => r.id !== reservation.id));
       } catch (error) {
         console.error('Error deleting reservation:', error);
       }
@@ -131,16 +118,8 @@ export default function ReservationsManagement() {
   const handleSave = async () => {
     if (editingReservation) {
       try {
-        const response = await fetch(`/api/reservations/${editingReservation.id}`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify(formData),
-        });
-        const updatedReservation = await response.json();
-        setReservations(reservations.map((r) => (r.id === updatedReservation.id ? updatedReservation : r)));
+        const updatedReservation = await apiClient.put(`/reservations/${editingReservation.id}`, formData);
+        setReservations((previous) => previous.map((r) => (r.id === updatedReservation.id ? updatedReservation : r)));
         setShowModal(false);
         setEditingReservation(null);
       } catch (error) {
@@ -151,16 +130,7 @@ export default function ReservationsManagement() {
 
   const handleAccept = async (reservation) => {
     try {
-      const response = await fetch(`/api/reservations/${reservation.id}/confirm`, {
-        method: 'PUT',
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to accept reservation');
-      }
-
-      const updatedReservation = await response.json();
+      const updatedReservation = await apiClient.confirmReservation(reservation.id);
       setReservations((previous) => previous.map((item) => (
         item.id === updatedReservation.id ? updatedReservation : item
       )));
@@ -176,16 +146,7 @@ export default function ReservationsManagement() {
     }
 
     try {
-      const response = await fetch(`/api/reservations/${reservation.id}/decline`, {
-        method: 'PUT',
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to decline reservation');
-      }
-
-      const updatedReservation = await response.json();
+      const updatedReservation = await apiClient.put(`/reservations/${reservation.id}/decline`, {});
       setReservations((previous) => previous.map((item) => (
         item.id === updatedReservation.id ? updatedReservation : item
       )));

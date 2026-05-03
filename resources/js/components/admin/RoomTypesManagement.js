@@ -1,10 +1,9 @@
-import React, { useState, useEffect, useContext } from 'react';
-import { AuthContext } from '../../contexts/AuthContext';
+import React, { useState, useEffect } from 'react';
+import { apiClient } from '../../services/apiClient';
 import DataTable from './DataTable';
 import Modal from '../Modal';
 
 export default function RoomTypesManagement() {
-  const { token } = useContext(AuthContext);
   const [roomTypes, setRoomTypes] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
@@ -13,16 +12,13 @@ export default function RoomTypesManagement() {
 
   useEffect(() => {
     fetchRoomTypes();
-  }, [token]);
+  }, []);
 
   const fetchRoomTypes = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch('/api/room-types', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await response.json();
-      setRoomTypes(data);
+      const data = await apiClient.getRoomTypes();
+      setRoomTypes(Array.isArray(data) ? data : data.data || []);
     } catch (error) {
       console.error('Error fetching room types:', error);
     } finally {
@@ -39,11 +35,8 @@ export default function RoomTypesManagement() {
   const handleDelete = async (type) => {
     if (confirm(`Are you sure you want to delete ${type.name}?`)) {
       try {
-        await fetch(`/api/room-types/${type.id}`, {
-          method: 'DELETE',
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        setRoomTypes(roomTypes.filter((t) => t.id !== type.id));
+        await apiClient.deleteRoomType(type.id);
+        setRoomTypes((previous) => previous.filter((t) => t.id !== type.id));
       } catch (error) {
         console.error('Error deleting room type:', error);
       }
@@ -53,16 +46,8 @@ export default function RoomTypesManagement() {
   const handleSave = async () => {
     if (editingType) {
       try {
-        const response = await fetch(`/api/room-types/${editingType.id}`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify(formData),
-        });
-        const updatedType = await response.json();
-        setRoomTypes(roomTypes.map((t) => (t.id === updatedType.id ? updatedType : t)));
+        const updatedType = await apiClient.updateRoomType(editingType.id, formData);
+        setRoomTypes((previous) => previous.map((t) => (t.id === updatedType.id ? updatedType : t)));
         setShowModal(false);
         setEditingType(null);
       } catch (error) {

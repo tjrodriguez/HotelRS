@@ -2,21 +2,28 @@
 
 namespace App\Models;
 
+use App\Enums\ReservationStatus;
+use Database\Factories\ReservationFactory;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Reservation extends Model
 {
+    /** @use HasFactory<ReservationFactory> */
+    use HasFactory, SoftDeletes;
+
     protected $fillable = [
         'guest_id',
-        'user_id',
         'room_id',
         'promotion_id',
         'check_in_date',
         'check_out_date',
-        'check_in',
-        'check_out',
+        'checked_in_at',
+        'checked_out_at',
         'status',
         'number_of_guests',
         'total_price',
@@ -24,21 +31,22 @@ class Reservation extends Model
         'special_requests',
     ];
 
-    protected $casts = [
-        'check_in_date' => 'date',
-        'check_out_date' => 'date',
-        'total_price' => 'decimal:2',
-        'discount_amount' => 'decimal:2',
-    ];
+    protected function casts(): array
+    {
+        return [
+            'check_in_date' => 'date',
+            'check_out_date' => 'date',
+            'checked_in_at' => 'datetime',
+            'checked_out_at' => 'datetime',
+            'total_price' => 'decimal:2',
+            'discount_amount' => 'decimal:2',
+            'status' => ReservationStatus::class,
+        ];
+    }
 
     public function guest(): BelongsTo
     {
         return $this->belongsTo(User::class, 'guest_id');
-    }
-
-    public function user(): BelongsTo
-    {
-        return $this->guest();
     }
 
     public function room(): BelongsTo
@@ -68,10 +76,7 @@ class Reservation extends Model
     public function calculatePrice(): array
     {
         $nights = $this->calculateNights();
-        $nightlyRate = $this->room?->roomType?->price_per_night
-            ?? $this->room?->roomType?->base_price
-            ?? $this->room?->price_per_night
-            ?? 0;
+        $nightlyRate = (float) ($this->room?->roomType?->price_per_night ?? 0);
 
         $basePrice = $nightlyRate * $nights;
         $discountAmount = 0;
@@ -83,39 +88,23 @@ class Reservation extends Model
         $totalPrice = $basePrice - $discountAmount;
 
         return [
-            'base_price' => $basePrice,
-            'discount_amount' => $discountAmount,
-            'total_price' => $totalPrice,
+            'base_price' => round($basePrice, 2),
+            'discount_amount' => round($discountAmount, 2),
+            'total_price' => round($totalPrice, 2),
+            'nights' => $nights,
         ];
     }
 
-    public function getUserIdAttribute(): ?int
+    public function scopeForGuest(Builder $query, User $guest): Builder
     {
-        return $this->guest_id;
+        return $query->where('guest_id', $guest->id);
     }
 
-    public function setUserIdAttribute(?int $value): void
+    public function scopeActive(Builder $query): Builder
     {
-        $this->attributes['guest_id'] = $value;
-    }
-
-    public function getCheckInAttribute(): mixed
-    {
-        return $this->check_in_date;
-    }
-
-    public function setCheckInAttribute(mixed $value): void
-    {
-        $this->attributes['check_in_date'] = $value;
-    }
-
-    public function getCheckOutAttribute(): mixed
-    {
-        return $this->check_out_date;
-    }
-
-    public function setCheckOutAttribute(mixed $value): void
-    {
-        $this->attributes['check_out_date'] = $value;
+        return $query->whereIn('status', [
+            ReservationStatus::Pending,
+            ReservationStatus::Confirmed,
+        ]);
     }
 }

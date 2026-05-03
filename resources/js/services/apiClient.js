@@ -2,6 +2,7 @@ export class ApiClient {
   constructor(baseURL = '/api', token = null) {
     this.baseURL = baseURL;
     this.token = token;
+    this.onUnauthorized = null;
   }
 
   setToken(token) {
@@ -31,6 +32,9 @@ export class ApiClient {
     const data = await response.json();
 
     if (!response.ok) {
+      if (response.status === 401 && this.onUnauthorized) {
+        this.onUnauthorized();
+      }
       throw {
         status: response.status,
         message: data.message || 'An error occurred',
@@ -119,27 +123,6 @@ export class ApiClient {
 
   deleteRoomType(id) {
     return this.delete(`/room-types/${id}`);
-  }
-
-  // Room Statuses
-  getRoomStatuses() {
-    return this.get('/room-statuses');
-  }
-
-  getRoomStatus(id) {
-    return this.get(`/room-statuses/${id}`);
-  }
-
-  createRoomStatus(data) {
-    return this.post('/room-statuses', data);
-  }
-
-  updateRoomStatus(id, data) {
-    return this.put(`/room-statuses/${id}`, data);
-  }
-
-  deleteRoomStatus(id) {
-    return this.delete(`/room-statuses/${id}`);
   }
 
   // Promotions

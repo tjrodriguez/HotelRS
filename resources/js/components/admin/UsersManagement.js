@@ -1,11 +1,9 @@
-import React, { useState, useEffect, useContext } from 'react';
-import { AuthContext } from '../../contexts/AuthContext';
+import React, { useState, useEffect } from 'react';
+import { apiClient } from '../../services/apiClient';
 import DataTable from './DataTable';
 import Modal from '../Modal';
-const apiClient = require('../../services/apiClient').default;
 
 export default function UsersManagement() {
-  const { token } = useContext(AuthContext);
   const [users, setUsers] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
@@ -14,16 +12,14 @@ export default function UsersManagement() {
 
   useEffect(() => {
     fetchUsers();
-  }, [token]);
+  }, []);
 
   const fetchUsers = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch('/api/users', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await response.json();
-      setUsers(data);
+      const data = await apiClient.getUsers();
+      const items = Array.isArray(data) ? data : data?.data || [];
+      setUsers(items);
     } catch (error) {
       console.error('Error fetching users:', error);
     } finally {
@@ -40,11 +36,8 @@ export default function UsersManagement() {
   const handleDelete = async (user) => {
     if (confirm(`Are you sure you want to delete ${user.name}?`)) {
       try {
-        await fetch(`/api/users/${user.id}`, {
-          method: 'DELETE',
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        setUsers(users.filter((u) => u.id !== user.id));
+        await apiClient.deleteUser(user.id);
+        setUsers((previous) => previous.filter((u) => u.id !== user.id));
       } catch (error) {
         console.error('Error deleting user:', error);
       }
@@ -54,16 +47,8 @@ export default function UsersManagement() {
   const handleSave = async () => {
     if (editingUser) {
       try {
-        const response = await fetch(`/api/users/${editingUser.id}`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify(formData),
-        });
-        const updatedUser = await response.json();
-        setUsers(users.map((u) => (u.id === updatedUser.id ? updatedUser : u)));
+        const updatedUser = await apiClient.updateUser(editingUser.id, formData);
+        setUsers((previous) => previous.map((u) => (u.id === updatedUser.id ? updatedUser : u)));
         setShowModal(false);
         setEditingUser(null);
       } catch (error) {

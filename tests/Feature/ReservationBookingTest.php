@@ -2,9 +2,9 @@
 
 namespace Tests\Feature;
 
+use App\Enums\RoomStatus;
 use App\Models\Promotion;
 use App\Models\Room;
-use App\Models\RoomStatus;
 use App\Models\RoomType;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -16,41 +16,26 @@ class ReservationBookingTest extends TestCase
 
     public function test_guest_can_create_a_reservation_with_pricing_and_promotion(): void
     {
-        $guest = User::factory()->create([
-            'role' => 'guest',
-        ]);
+        $guest = User::factory()->guest()->create();
 
-        $availableStatus = RoomStatus::firstOrCreate([
-            'status_name' => 'Available',
-        ], [
-            'color' => 'green',
-        ]);
-
-        $roomType = RoomType::create([
+        $roomType = RoomType::factory()->create([
             'name' => 'Suite',
-            'description' => 'Spacious room with premium amenities.',
-            'capacity' => 4,
             'price_per_night' => 150,
         ]);
 
-        $room = Room::create([
+        $room = Room::factory()->create([
             'room_number' => '501',
             'room_type_id' => $roomType->id,
-            'room_status_id' => $availableStatus->id,
+            'status' => RoomStatus::Available,
             'floor' => 5,
-            'price_per_night' => 175,
             'description' => 'Premium suite.',
         ]);
 
-        $promotion = Promotion::create([
+        $promotion = Promotion::factory()->create([
             'code' => 'SAVE10',
-            'description' => 'Ten percent off',
             'discount_percentage' => 10,
             'valid_from' => now()->subDay()->toDateString(),
             'valid_until' => now()->addDay()->toDateString(),
-            'max_uses' => null,
-            'current_uses' => 0,
-            'is_active' => true,
         ]);
 
         $response = $this->actingAs($guest, 'sanctum')->postJson('/api/reservations', [
@@ -63,10 +48,10 @@ class ReservationBookingTest extends TestCase
         ]);
 
         $response->assertCreated();
-        $response->assertJsonPath('guest_id', $guest->id);
-        $response->assertJsonPath('room_id', $room->id);
-        $response->assertJsonPath('total_price', '405.00');
-        $response->assertJsonPath('discount_amount', '45.00');
+        $response->assertJsonFragment(['id' => $guest->id], 'guest');
+        $response->assertJsonFragment(['id' => $room->id], 'room');
+        $response->assertJsonFragment(['total_price' => 405.00]);
+        $response->assertJsonFragment(['discount_amount' => 45.00]);
 
         $this->assertDatabaseHas('reservations', [
             'guest_id' => $guest->id,

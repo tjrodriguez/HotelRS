@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useContext } from 'react';
-import { AuthContext } from '../../contexts/AuthContext';
+import React, { useState, useEffect } from 'react';
+import { apiClient } from '../../services/apiClient';
 
 const CALENDAR_ICON = (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
@@ -21,7 +21,6 @@ const ARROW_RIGHT = (
 );
 
 export default function RoomAvailabilityCalendar({ room, onSelectDates, onClose }) {
-  const { token } = useContext(AuthContext);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [reservations, setReservations] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -34,10 +33,7 @@ export default function RoomAvailabilityCalendar({ room, onSelectDates, onClose 
     const fetchReservations = async () => {
       setIsLoading(true);
       try {
-        const response = await fetch(`/api/rooms/${room.id}/reservations`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        const data = await response.json();
+        const data = await apiClient.get(`/rooms/${room.id}/reservations`);
         setReservations(Array.isArray(data) ? data : data.data || []);
       } catch (error) {
         console.error('Error fetching reservations:', error);
@@ -47,10 +43,10 @@ export default function RoomAvailabilityCalendar({ room, onSelectDates, onClose 
       }
     };
 
-    if (room?.id && token) {
+    if (room?.id) {
       fetchReservations();
     }
-  }, [room?.id, token]);
+  }, [room?.id]);
 
   const getDaysInMonth = (date) => {
     return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();

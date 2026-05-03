@@ -4,41 +4,41 @@
 // the ITCSS architecture (Inverted Triangle CSS).
 
 // 1. Abstracts (variables, mixins, functions - no output)
-@import 'abstracts/variables';
-@import 'abstracts/mixins';
+@use 'abstracts/variables';
+@use 'abstracts/mixins';
 
 // 2. Base (reset, typography, global)
-@import 'base/reset';
-@import 'base/typography';
-@import 'base/global';
+@use 'base/reset';
+@use 'base/typography';
+@use 'base/global';
 
 // 3. Shared Components (used across admin/guest)
-@import 'components/shared/login';
-@import 'components/shared/button';
-@import 'components/shared/feedback';
-@import 'components/shared/modal';
-@import 'components/shared/card';
+@use 'components/shared/login';
+@use 'components/shared/button';
+@use 'components/shared/feedback';
+@use 'components/shared/modal';
+@use 'components/shared/card';
 
 // 4. Admin Components (mirror: js/components/admin/)
-@import 'components/admin/sidebar';
-@import 'components/admin/status-badge';
-@import 'components/admin/data-table';
-@import 'components/admin/reservations';
-@import 'components/admin/management-views';
+@use 'components/admin/sidebar';
+@use 'components/admin/status-badge';
+@use 'components/admin/data-table';
+@use 'components/admin/reservations';
+@use 'components/admin/management-views';
 
 // 5. Guest Components (mirror: js/components/guest/)
-@import 'components/guest/header';
-@import 'components/guest/layout';
-@import 'components/guest/search';
-@import 'components/guest/room-card';
-@import 'components/guest/room-availability-calendar';
-@import 'components/guest/booking-modal';
-@import 'components/guest/booking-history';
-@import 'components/guest/booking-history-extended';
+@use 'components/guest/header';
+@use 'components/guest/layout';
+@use 'components/guest/search';
+@use 'components/guest/room-card';
+@use 'components/guest/room-availability-calendar';
+@use 'components/guest/booking-modal';
+@use 'components/guest/booking-history';
+@use 'components/guest/booking-history-extended';
 
 // 6. Page-level Styles (highest specificity)
-@import 'components/pages/admin-dashboard';
-@import 'components/pages/guest-booking';
+@use 'components/pages/admin-dashboard';
+@use 'components/pages/guest-booking';
 
 // Guest-specific overrides
 :root {

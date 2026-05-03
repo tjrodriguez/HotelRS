@@ -1,5 +1,5 @@
-import React, { useState, useContext, useMemo } from 'react';
-import { AuthContext } from '../../contexts/AuthContext';
+import React, { useState, useMemo } from 'react';
+import { apiClient } from '../../services/apiClient';
 import Modal from '../Modal';
 import PricingBreakdown from './PricingBreakdown';
 
@@ -39,27 +39,6 @@ const ALERT_ICON = (
   </svg>
 );
 
-const readResponseData = async (response) => {
-  const contentType = response.headers.get('content-type') || '';
-  const bodyText = await response.text();
-
-  if (contentType.includes('application/json')) {
-    try {
-      return JSON.parse(bodyText);
-    } catch (error) {
-      return {
-        message: 'The server returned invalid JSON.',
-        raw: bodyText,
-      };
-    }
-  }
-
-  return {
-    message: bodyText || 'Unexpected server response.',
-    raw: bodyText,
-  };
-};
-
 const getDateString = (date) => date.toISOString().split('T')[0];
 
 const getTomorrowDateString = () => {
@@ -90,7 +69,6 @@ const normalizeFutureDate = (value, fallback) => {
 };
 
 export default function BookingModal({ room, checkInDate, checkOutDate, onClose, onSuccess }) {
-  const { token } = useContext(AuthContext);
   const tomorrow = getTomorrowDateString();
   const normalizedCheckInDate = normalizeFutureDate(checkInDate, tomorrow);
   const normalizedCheckOutDate = normalizeFutureDate(checkOutDate, getDateStringWithOffset(normalizedCheckInDate, 1));
@@ -157,37 +135,18 @@ export default function BookingModal({ room, checkInDate, checkOutDate, onClose,
 
     setIsValidatingPromo(true);
     try {
-      const response = await fetch('/api/promotions/validate', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Accept: 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ code: formData.promotionCode }),
+      const data = await apiClient.validatePromotion(formData.promotionCode);
+      setPromotion(data);
+      setFieldErrors((prev) => {
+        const updated = { ...prev };
+        delete updated.promotionCode;
+        return updated;
       });
-
-      const data = await readResponseData(response);
-
-      if (response.ok) {
-        setPromotion(data);
-        setFieldErrors((prev) => {
-          const updated = { ...prev };
-          delete updated.promotionCode;
-          return updated;
-        });
-      } else {
-        setPromotion(null);
-        setFieldErrors((prev) => ({
-          ...prev,
-          promotionCode: data.message || 'Invalid promotion code',
-        }));
-      }
     } catch (err) {
       setPromotion(null);
       setFieldErrors((prev) => ({
         ...prev,
-        promotionCode: 'Error validating promotion code',
+        promotionCode: err.message || 'Invalid promotion code',
       }));
     } finally {
       setIsValidatingPromo(false);
@@ -229,13 +188,6 @@ export default function BookingModal({ room, checkInDate, checkOutDate, onClose,
       return;
     }
 
-    if (!token) {
-      const msg = 'Authentication token missing';
-      setError(msg);
-      console.error(msg);
-      return;
-    }
-
     setIsSubmitting(true);
     setError('');
     setFieldErrors({});
@@ -258,44 +210,26 @@ export default function BookingModal({ room, checkInDate, checkOutDate, onClose,
 
       console.log('Submitting payload:', payload);
 
-      const response = await fetch('/api/reservations', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Accept: 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(payload),
-      });
-
-      const data = await readResponseData(response);
-      console.log('Response status:', response.status);
-      console.log('Response data:', data);
-
-      if (!response.ok) {
-        if (response.status === 422 && data.errors) {
-          console.error('Validation errors:', data.errors);
-          setFieldErrors(data.errors);
-          setError('Please fix the errors below');
-        } else if (response.status === 401) {
-          setError('Please sign in again before booking.');
-        } else if (response.status === 419) {
-          setError('Your session expired. Please refresh and try again.');
-        } else if (data.message) {
-          console.error('API error:', data.message);
-          setError(data.message);
-        } else {
-          console.error('Booking failed with unknown error');
-          setError('Booking failed. Please try again.');
-        }
-        return;
-      }
-
+      await apiClient.createReservation(payload);
       console.log('Booking successful!');
       onSuccess();
     } catch (err) {
-      console.error('Fetch error:', err);
-      setError(err.message || 'An error occurred during booking');
+      console.error('Booking error:', err);
+      if (err.status === 422 && err.data?.errors) {
+        console.error('Validation errors:', err.data.errors);
+        setFieldErrors(err.data.errors);
+        setError('Please fix the errors below');
+      } else if (err.status === 401) {
+        setError('Please sign in again before booking.');
+      } else if (err.status === 419) {
+        setError('Your session expired. Please refresh and try again.');
+      } else if (err.message) {
+        console.error('API error:', err.message);
+        setError(err.message);
+      } else {
+        console.error('Booking failed with unknown error');
+        setError('Booking failed. Please try again.');
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -308,7 +242,7 @@ export default function BookingModal({ room, checkInDate, checkOutDate, onClose,
     <Modal title={`Book Room ${room.room_number}`} onClose={onClose}>
       <form onSubmit={handleSubmit} className="booking-form" noValidate>
         {/* Debug info */}
-        <div style={{ display: 'none' }} data-debug={JSON.stringify({ nights, isSubmitting, token: !!token, roomId: room?.id })}>
+        <div style={{ display: 'none' }} data-debug={JSON.stringify({ nights, isSubmitting, roomId: room?.id })}>
           Debug
         </div>
 

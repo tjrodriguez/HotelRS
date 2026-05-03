@@ -2,16 +2,20 @@
 
 namespace App\Models;
 
+use Database\Factories\PromotionFactory;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Promotion extends Model
 {
+    /** @use HasFactory<PromotionFactory> */
+    use HasFactory;
+
     protected $fillable = [
         'code',
         'description',
-        'discount_percent',
-        'discount_value',
+        'discount_type',
         'discount_percentage',
         'valid_from',
         'valid_until',
@@ -20,11 +24,15 @@ class Promotion extends Model
         'is_active',
     ];
 
-    protected $casts = [
-        'valid_from' => 'date',
-        'valid_until' => 'date',
-        'is_active' => 'boolean',
-    ];
+    protected function casts(): array
+    {
+        return [
+            'discount_type' => 'string',
+            'valid_from' => 'date',
+            'valid_until' => 'date',
+            'is_active' => 'boolean',
+        ];
+    }
 
     public function reservations(): HasMany
     {
@@ -41,37 +49,23 @@ class Promotion extends Model
             && ($this->max_uses === null || $this->current_uses < $this->max_uses);
     }
 
-    public function calculateDiscount($amount): float
+    public function calculateDiscount(float $amount): float
     {
         if (! $this->isValid()) {
             return 0;
         }
 
-        return ($amount * $this->discountPercentage()) / 100;
+        if ($this->discount_type === 'fixed') {
+            return min($amount, (float) $this->discount_percentage);
+        }
+
+        return round(($amount * (float) $this->discount_percentage) / 100, 2);
     }
 
-    public function discountPercentage(): float
+    public function scopeValidToday($query)
     {
-        return (float) ($this->discount_percentage ?? $this->discount_value ?? $this->discount_percent ?? 0);
-    }
-
-    public function getDiscountValueAttribute(): float
-    {
-        return $this->discountPercentage();
-    }
-
-    public function setDiscountValueAttribute($value): void
-    {
-        $this->attributes['discount_percentage'] = $value;
-    }
-
-    public function getDiscountPercentAttribute(): float
-    {
-        return $this->discountPercentage();
-    }
-
-    public function setDiscountPercentAttribute($value): void
-    {
-        $this->attributes['discount_percentage'] = $value;
+        return $query->where('is_active', true)
+            ->where('valid_from', '<=', now())
+            ->where('valid_until', '>=', now());
     }
 }

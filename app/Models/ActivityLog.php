@@ -5,22 +5,27 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class ActivityLog extends Model {
+class ActivityLog extends Model
+{
     protected $fillable = [
         'user_id',
         'action',
-        'model_type',
-        'model_id',
+        'entity_type',
+        'entity_id',
         'changes',
         'ip_address',
         'user_agent',
     ];
 
-    protected $casts = [
-        'changes' => 'array',
-    ];
+    protected function casts(): array
+    {
+        return [
+            'changes' => 'array',
+        ];
+    }
 
-    public function user(): BelongsTo {
+    public function user(): BelongsTo
+    {
         return $this->belongsTo(User::class)->withDefault();
     }
 }

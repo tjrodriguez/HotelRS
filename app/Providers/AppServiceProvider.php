@@ -2,6 +2,18 @@
 
 namespace App\Providers;
 
+use App\Events\ReservationStatusChanged;
+use App\Listeners\LogReservationChange;
+use App\Listeners\SyncRoomStatus;
+use App\Models\Payment;
+use App\Models\Reservation;
+use App\Models\Room;
+use App\Models\User;
+use App\Policies\PaymentPolicy;
+use App\Policies\ReservationPolicy;
+use App\Policies\RoomPolicy;
+use App\Policies\UserPolicy;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -19,6 +31,21 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        Event::listen(
+            ReservationStatusChanged::class,
+            SyncRoomStatus::class,
+        );
+
+        Event::listen(
+            ReservationStatusChanged::class,
+            LogReservationChange::class,
+        );
     }
+
+    protected $policies = [
+        Reservation::class => ReservationPolicy::class,
+        Room::class => RoomPolicy::class,
+        Payment::class => PaymentPolicy::class,
+        User::class => UserPolicy::class,
+    ];
 }

@@ -1,11 +1,10 @@
-import React, { useState, useEffect, useContext } from 'react';
-import { AuthContext } from '../../contexts/AuthContext';
+import React, { useState, useEffect } from 'react';
+import { apiClient } from '../../services/apiClient';
 import DataTable from './DataTable';
 import Modal from '../Modal';
 import StatusBadge from './StatusBadge';
 
 export default function PromotionsManagement() {
-  const { token } = useContext(AuthContext);
   const [promotions, setPromotions] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
@@ -19,7 +18,7 @@ export default function PromotionsManagement() {
 
   useEffect(() => {
     fetchPromotions();
-  }, [token]);
+  }, []);
 
   const handleCreate = () => {
     setEditingPromotion(null);
@@ -30,11 +29,9 @@ export default function PromotionsManagement() {
   const fetchPromotions = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch('/api/promotions', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await response.json();
-      setPromotions(data);
+      const data = await apiClient.getPromotions();
+      const items = Array.isArray(data) ? data : data?.data || [];
+      setPromotions(items);
     } catch (error) {
       console.error('Error fetching promotions:', error);
     } finally {
@@ -56,11 +53,8 @@ export default function PromotionsManagement() {
   const handleDelete = async (promotion) => {
     if (confirm(`Are you sure you want to delete the ${promotion.code} promotion?`)) {
       try {
-        await fetch(`/api/promotions/${promotion.id}`, {
-          method: 'DELETE',
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        setPromotions(promotions.filter((p) => p.id !== promotion.id));
+        await apiClient.deletePromotion(promotion.id);
+        setPromotions((previous) => previous.filter((p) => p.id !== promotion.id));
       } catch (error) {
         console.error('Error deleting promotion:', error);
       }
@@ -70,27 +64,11 @@ export default function PromotionsManagement() {
   const handleSave = async () => {
     try {
       if (editingPromotion) {
-        const response = await fetch(`/api/promotions/${editingPromotion.id}`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify(formData),
-        });
-        const updatedPromotion = await response.json();
-        setPromotions(promotions.map((p) => (p.id === updatedPromotion.id ? updatedPromotion : p)));
+        const updatedPromotion = await apiClient.updatePromotion(editingPromotion.id, formData);
+        setPromotions((previous) => previous.map((p) => (p.id === updatedPromotion.id ? updatedPromotion : p)));
       } else {
-        const response = await fetch(`/api/promotions`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify(formData),
-        });
-        const newPromotion = await response.json();
-        setPromotions([newPromotion, ...promotions]);
+        const newPromotion = await apiClient.createPromotion(formData);
+        setPromotions((previous) => [newPromotion, ...previous]);
       }
       setShowModal(false);
       setEditingPromotion(null);

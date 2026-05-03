@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useContext } from 'react';
-import { AuthContext } from '../../contexts/AuthContext';
+import React, { useState, useEffect } from 'react';
+import { apiClient } from '../../services/apiClient';
 import RoomCard from './RoomCard';
 import BookingModal from './BookingModal';
 
@@ -34,7 +34,6 @@ export default function RoomBrowser({ showHero = true }) {
     );
   };
 
-  const { token } = useContext(AuthContext);
   const [rooms, setRooms] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [showBookingModal, setShowBookingModal] = useState(false);
@@ -47,26 +46,18 @@ export default function RoomBrowser({ showHero = true }) {
 
   useEffect(() => {
     fetchRooms();
-  }, [token, filters]);
+  }, [filters]);
 
   const fetchRooms = async () => {
     setIsLoading(true);
     try {
-      let url = '/api/rooms';
-      const params = new URLSearchParams();
+      const params = {
+        check_in: filters.checkInDate,
+        check_out: filters.checkOutDate,
+      };
+      if (filters.roomType) params.room_type_id = filters.roomType;
 
-      params.append('check_in', filters.checkInDate);
-      params.append('check_out', filters.checkOutDate);
-      if (filters.roomType) params.append('room_type_id', filters.roomType);
-
-      if (params.toString()) {
-        url += `?${params.toString()}`;
-      }
-
-      const response = await fetch(url, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await response.json();
+      const data = await apiClient.getRooms(params);
       setRooms(Array.isArray(data) ? data : data.data || []);
     } catch (error) {
       console.error('Error fetching rooms:', error);

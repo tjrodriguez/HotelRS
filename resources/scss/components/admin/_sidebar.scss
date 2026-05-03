@@ -98,7 +98,14 @@
     border-top: 1px solid var(--ad-border, rgba(45, 42, 38, 0.08));
     display: flex;
     gap: 12px;
+    justify-content: space-between;
     padding: 16px 20px;
+
+    .user-info {
+      align-items: center;
+      display: flex;
+      gap: 12px;
+    }
 
     .user-chip {
       align-items: center;
@@ -128,6 +135,31 @@
       span {
         color: var(--ad-sidebar-muted, rgba(241, 240, 235, 0.7));
         font-size: 11px;
+      }
+    }
+
+    .sidebar-logout {
+      align-items: center;
+      background: transparent;
+      border: 1px solid var(--ad-sidebar-muted, rgba(241, 240, 235, 0.4));
+      border-radius: 8px;
+      color: var(--ad-sidebar-muted, rgba(241, 240, 235, 0.8));
+      cursor: pointer;
+      display: inline-flex;
+      font-size: 12px;
+      font-weight: 500;
+      gap: 6px;
+      padding: 8px 14px;
+      transition: all 0.2s ease;
+
+      &:hover {
+        background: rgba(220, 38, 38, 0.1);
+        border-color: var(--ad-danger, #dc2626);
+        color: var(--ad-danger, #dc2626);
+      }
+
+      &:active {
+        transform: scale(0.98);
       }
     }
   }

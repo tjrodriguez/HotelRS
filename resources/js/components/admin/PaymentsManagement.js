@@ -1,10 +1,9 @@
-import React, { useState, useEffect, useContext } from 'react';
-import { AuthContext } from '../../contexts/AuthContext';
+import React, { useState, useEffect } from 'react';
+import { apiClient } from '../../services/apiClient';
 import DataTable from './DataTable';
 import Modal from '../Modal';
 
 export default function PaymentsManagement() {
-  const { token } = useContext(AuthContext);
   const [payments, setPayments] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
@@ -18,16 +17,14 @@ export default function PaymentsManagement() {
 
   useEffect(() => {
     fetchPayments();
-  }, [token]);
+  }, []);
 
   const fetchPayments = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch('/api/payments', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await response.json();
-      setPayments(data);
+      const data = await apiClient.getPayments();
+      const items = Array.isArray(data) ? data : data?.data || [];
+      setPayments(items);
     } catch (error) {
       console.error('Error fetching payments:', error);
     } finally {
@@ -49,11 +46,8 @@ export default function PaymentsManagement() {
   const handleDelete = async (payment) => {
     if (confirm(`Are you sure you want to delete this payment?`)) {
       try {
-        await fetch(`/api/payments/${payment.id}`, {
-          method: 'DELETE',
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        setPayments(payments.filter((p) => p.id !== payment.id));
+        await apiClient.deletePayment(payment.id);
+        setPayments((previous) => previous.filter((p) => p.id !== payment.id));
       } catch (error) {
         console.error('Error deleting payment:', error);
       }
@@ -63,16 +57,8 @@ export default function PaymentsManagement() {
   const handleSave = async () => {
     if (editingPayment) {
       try {
-        const response = await fetch(`/api/payments/${editingPayment.id}`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify(formData),
-        });
-        const updatedPayment = await response.json();
-        setPayments(payments.map((p) => (p.id === updatedPayment.id ? updatedPayment : p)));
+        const updatedPayment = await apiClient.updatePayment(editingPayment.id, formData);
+        setPayments((previous) => previous.map((p) => (p.id === updatedPayment.id ? updatedPayment : p)));
         setShowModal(false);
         setEditingPayment(null);
       } catch (error) {

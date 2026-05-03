@@ -7,3 +7,7 @@ Route::get('/', function () {
         'appName' => config('app.name'),
     ]);
 });
+
+Route::get('/{any}', function () {
+    return view('welcome');
+})->where('any', '.*');

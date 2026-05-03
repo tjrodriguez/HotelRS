@@ -1,6 +1,10 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
 
 export default function AdminSidebar({ activeTab, setActiveTab, user }) {
+  const { logout } = useAuth();
+  const navigate = useNavigate();
   const initials = user?.name
     ? user.name.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase()
     : 'AD';
@@ -95,11 +99,23 @@ export default function AdminSidebar({ activeTab, setActiveTab, user }) {
         ))}
       </nav>
       <div className="sidebar-footer">
-        <div className="user-chip">{initials}</div>
-        <div className="user-meta">
-          <strong>{user?.name || 'Admin'}</strong>
-          <span>{user?.role === 'admin' ? 'Manager' : 'Front Desk'}</span>
+        <div className="user-info">
+          <div className="user-chip">{initials}</div>
+          <div className="user-meta">
+            <strong>{user?.name || 'Admin'}</strong>
+            <span>{user?.role === 'admin' ? 'Manager' : 'Front Desk'}</span>
+          </div>
         </div>
+        <button
+          className="sidebar-logout"
+          onClick={async () => {
+            await logout();
+            navigate('/login');
+          }}
+          type="button"
+        >
+          Logout
+        </button>
       </div>
     </aside>
   );

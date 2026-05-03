@@ -1,8 +1,10 @@
-import React, { useState, useContext } from 'react';
-import { AuthContext } from '../../contexts/AuthContext';
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
 
 export default function Login() {
-  const { login, register } = useContext(AuthContext);
+  const { login, register, isAdmin } = useAuth();
+  const navigate = useNavigate();
   const [role, setRole] = useState('guest');
   const [isLogin, setIsLogin] = useState(true);
   const [loading, setLoading] = useState(false);
@@ -17,6 +19,7 @@ export default function Login() {
     setError('');
     try {
       await login(formData.email, formData.password);
+      navigate(role === 'admin' ? '/admin/dashboard' : '/book');
     } catch (err) {
       setError(err.message || 'Login failed');
     } finally {
@@ -35,6 +38,7 @@ export default function Login() {
     }
     try {
       await register(formData.name, formData.email, formData.password, formData.passwordConfirmation);
+      navigate('/book');
     } catch (err) {
       setError(err.message || 'Registration failed');
     } finally {

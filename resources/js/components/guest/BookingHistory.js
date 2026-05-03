@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useContext } from 'react';
-import { AuthContext } from '../../contexts/AuthContext';
+import React, { useState, useEffect } from 'react';
+import { apiClient } from '../../services/apiClient';
 import PricingBreakdown from './PricingBreakdown';
 
 export default function BookingHistory() {
@@ -18,7 +18,6 @@ export default function BookingHistory() {
     );
   };
 
-  const { token } = useContext(AuthContext);
   const [reservations, setReservations] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -31,7 +30,7 @@ export default function BookingHistory() {
 
   useEffect(() => {
     fetchMyReservations();
-  }, [token]);
+  }, []);
 
   const bookingStyles = (
     <style>{`
@@ -73,19 +72,11 @@ export default function BookingHistory() {
     setIsLoading(true);
     setError('');
     try {
-      const response = await fetch('/api/reservations', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch reservations');
-      }
-
-      const data = await response.json();
+      const data = await apiClient.getReservations();
       setReservations(Array.isArray(data) ? data : data.data || []);
     } catch (err) {
       console.error('Error fetching reservations:', err);
-      setError(err.message);
+      setError(err.message || 'Failed to fetch reservations');
       setReservations([]);
     } finally {
       setIsLoading(false);
@@ -95,23 +86,14 @@ export default function BookingHistory() {
   const handleCancel = async (reservationId) => {
     if (confirm('Are you sure you want to cancel this reservation?')) {
       try {
-        const response = await fetch(`/api/reservations/${reservationId}/cancel`, {
-          method: 'PUT',
-          headers: { Authorization: `Bearer ${token}` },
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.message || 'Failed to cancel reservation');
-        }
-
-        setReservations(
-          reservations.map((r) =>
+        await apiClient.cancelReservation(reservationId);
+        setReservations((previous) =>
+          previous.map((r) =>
             r.id === reservationId ? { ...r, status: 'cancelled' } : r
           )
         );
       } catch (err) {
-        alert(`Error: ${err.message}`);
+        alert(`Error: ${err.message || 'Failed to cancel reservation'}`);
       }
     }
   };

@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Enums\PaymentStatus;
+use App\Enums\ReservationStatus;
+use App\Http\Resources\PaymentResource;
 use App\Models\Payment;
 use App\Models\Reservation;
 use Illuminate\Http\Request;
@@ -18,7 +21,17 @@ class PaymentController
             });
         }
 
-        return response()->json($query->paginate(20));
+        $paginated = $query->paginate(20);
+
+        return response()->json([
+            'data' => PaymentResource::collection($paginated),
+            'meta' => [
+                'current_page' => $paginated->currentPage(),
+                'last_page' => $paginated->lastPage(),
+                'per_page' => $paginated->perPage(),
+                'total' => $paginated->total(),
+            ],
+        ]);
     }
 
     public function show($id, Request $request)
@@ -33,7 +46,7 @@ class PaymentController
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
-        return response()->json($payment);
+        return response()->json(new PaymentResource($payment));
     }
 
     public function store(Request $request)
@@ -41,7 +54,7 @@ class PaymentController
         $validated = $request->validate([
             'reservation_id' => 'required|exists:reservations,id',
             'amount' => 'required|numeric|min:0',
-            'payment_method' => 'required|in:credit_card,debit_card,bank_transfer,cash',
+            'payment_method' => 'required|string|in:credit_card,debit_card,bank_transfer,cash',
         ]);
 
         $reservation = Reservation::find($validated['reservation_id']);
@@ -54,23 +67,23 @@ class PaymentController
             'reservation_id' => $validated['reservation_id'],
             'amount' => $validated['amount'],
             'payment_method' => $validated['payment_method'],
-            'status' => 'pending',
+            'status' => PaymentStatus::Pending,
         ]);
 
         // In a real system, you would process payment here
         // For now, we'll mark it as completed
         $payment->update([
-            'status' => 'completed',
+            'status' => PaymentStatus::Completed,
             'paid_at' => now(),
             'transaction_id' => 'TXN-'.str()->random(16),
         ]);
 
         // Update reservation status if full payment is made
         if ($payment->amount >= $reservation->total_price) {
-            $reservation->update(['status' => 'confirmed']);
+            $reservation->update(['status' => ReservationStatus::Confirmed]);
         }
 
-        return response()->json($payment, 201);
+        return (new PaymentResource($payment))->response()->setStatusCode(201);
     }
 
     public function refund($id, Request $request)
@@ -81,13 +94,13 @@ class PaymentController
             return response()->json(['message' => 'Not found'], 404);
         }
 
-        if ($payment->status !== 'completed') {
+        if ($payment->status !== PaymentStatus::Completed) {
             return response()->json(['message' => 'Cannot refund this payment'], 422);
         }
 
-        $payment->update(['status' => 'refunded']);
-        $payment->reservation->update(['status' => 'cancelled']);
+        $payment->update(['status' => PaymentStatus::Refunded]);
+        $payment->reservation->update(['status' => ReservationStatus::Cancelled]);
 
-        return response()->json($payment);
+        return response()->json(new PaymentResource($payment));
     }
 }

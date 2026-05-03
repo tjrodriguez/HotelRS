@@ -2,11 +2,14 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Http\Resources\UserResource;
 use App\Models\User;
 use Illuminate\Http\Request;
 
-class UserController {
-    public function index(Request $request) {
+class UserController
+{
+    public function index(Request $request)
+    {
         $query = User::query();
 
         if ($request->has('role')) {
@@ -21,29 +24,41 @@ class UserController {
             });
         }
 
-        return response()->json($query->paginate(20));
+        $paginated = $query->paginate(20);
+
+        return response()->json([
+            'data' => UserResource::collection($paginated),
+            'meta' => [
+                'current_page' => $paginated->currentPage(),
+                'last_page' => $paginated->lastPage(),
+                'per_page' => $paginated->perPage(),
+                'total' => $paginated->total(),
+            ],
+        ]);
     }
 
-    public function show($id, Request $request) {
+    public function show($id, Request $request)
+    {
         $user = User::find($id);
 
-        if (!$user) {
+        if (! $user) {
             return response()->json(['message' => 'Not found'], 404);
         }
 
-        return response()->json($user);
+        return response()->json(new UserResource($user));
     }
 
-    public function update(Request $request, $id) {
+    public function update(Request $request, $id)
+    {
         $user = User::find($id);
 
-        if (!$user) {
+        if (! $user) {
             return response()->json(['message' => 'Not found'], 404);
         }
 
         $validated = $request->validate([
             'name' => 'string|max:255',
-            'email' => 'email|unique:users,email,' . $id,
+            'email' => 'email|unique:users,email,'.$id,
             'phone' => 'nullable|string',
             'address' => 'nullable|string',
             'role' => 'in:admin,guest',
@@ -51,13 +66,14 @@ class UserController {
 
         $user->update($validated);
 
-        return response()->json($user);
+        return response()->json(new UserResource($user));
     }
 
-    public function destroy($id, Request $request) {
+    public function destroy($id, Request $request)
+    {
         $user = User::find($id);
 
-        if (!$user) {
+        if (! $user) {
             return response()->json(['message' => 'Not found'], 404);
         }
 
