@@ -1,0 +1,382 @@
+// Reservations Management Component Styles
+// Modern calendar design with improved UX
+
+.reservations-calendar-wrap {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+// Calendar Container
+.calendar {
+  width: 400px;
+  background: var(--ad-surface);
+  border-radius: 16px;
+  border: 1px solid var(--ad-border);
+  box-shadow: var(--ad-shadow);
+  padding: 20px;
+  flex-shrink: 0;
+}
+
+// Calendar Header
+.calendar-header {
+  margin-bottom: 16px;
+  padding-bottom: 16px;
+  border-bottom: 2px solid var(--ad-border);
+
+  .calendar-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 16px;
+
+    .btn-icon {
+      background: var(--ad-surface-raised);
+      border: 1px solid var(--ad-border);
+      color: var(--ad-text-secondary);
+      border-radius: 8px;
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+
+      &:hover {
+        background: var(--ad-accent-soft);
+        border-color: var(--ad-accent);
+        color: var(--ad-accent);
+      }
+
+      &:focus-visible {
+        outline: 2px solid var(--ad-accent);
+        outline-offset: 2px;
+      }
+    }
+
+    .btn-today {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 16px;
+      background: var(--ad-accent);
+      border: none;
+      border-radius: 8px;
+      color: white;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+
+      &:hover {
+        background: var(--ad-accent-hover);
+        box-shadow: 0 2px 8px rgba(201, 150, 26, 0.4);
+      }
+
+      &:focus-visible {
+        outline: 2px solid var(--ad-accent);
+        outline-offset: 2px;
+      }
+    }
+  }
+
+  .calendar-title {
+    text-align: center;
+    font-weight: 700;
+    font-family: var(--font-display);
+    font-size: 24px;
+    color: var(--ad-text);
+    letter-spacing: -0.5px;
+  }
+}
+
+// Calendar Grid - scoped to admin calendar only
+.calendar > .calendar-grid {
+  display: grid !important;
+  grid-template-columns: repeat(7, 1fr) !important;
+  grid-auto-flow: row !important;
+  width: 100%;
+  gap: 0 !important;
+}
+
+// Weekday Headers - scoped
+.calendar > .calendar-grid > .calendar-weekday {
+  text-align: center;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--ad-text-secondary);
+  padding: 12px 4px;
+  background: var(--ad-surface-raised);
+  border: 1px solid var(--ad-border);
+  border-bottom: 2px solid var(--ad-border);
+
+  &.weekend {
+    color: var(--ad-danger);
+    background: rgba(220, 38, 38, 0.04);
+  }
+}
+
+// Day Cells - scoped
+.calendar > .calendar-grid > .calendar-day {
+  aspect-ratio: 1;
+  min-height: 48px;
+  border-radius: 0;
+  padding: 8px;
+  cursor: pointer;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  background: var(--ad-surface);
+  border: 1px solid var(--ad-border);
+  margin: 0;
+  transition: all 0.15s ease;
+
+  // Date number
+  .date-num {
+    font-weight: 500;
+    font-size: 15px;
+    color: var(--ad-text);
+    line-height: 1.2;
+  }
+
+  // Reservation count badge
+  .reservation-count {
+    position: absolute;
+    bottom: 4px;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 5px;
+    border-radius: 10px;
+    background: var(--ad-success);
+    color: white;
+    line-height: 1;
+    min-width: 16px;
+    text-align: center;
+  }
+
+  // Empty cells (previous/next month padding)
+  &.empty {
+    background: var(--ad-bg);
+    cursor: default;
+
+    &.weekend {
+      background: rgba(220, 38, 38, 0.02);
+    }
+  }
+
+  // Other month dates (faded)
+  &.other-month .date-num {
+    color: var(--ad-text-muted);
+    opacity: 0.6;
+  }
+
+  // Weekend styling
+  &.weekend:not(.empty):not(.selected) {
+    background: rgba(220, 38, 38, 0.03);
+
+    .date-num {
+      color: var(--ad-danger);
+    }
+  }
+
+  // Hover state (non-empty)
+  &:hover:not(.empty) {
+    background: var(--ad-accent-soft);
+    border-color: var(--ad-accent);
+    z-index: 1;
+  }
+
+  // Today state - circle highlight
+  &.today .date-num {
+    background: var(--ad-accent);
+    color: white;
+    font-weight: 700;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  // Selected state
+  &.selected {
+    background: var(--ad-accent-soft);
+    border-color: var(--ad-accent);
+
+    .date-num {
+      color: var(--ad-accent);
+      font-weight: 700;
+    }
+
+    .reservation-count {
+      background: var(--ad-accent);
+    }
+  }
+
+  // Reserved state indicator
+  &.reserved:not(.selected) .reservation-count {
+    background: var(--ad-success);
+  }
+
+  // Today + Selected combination
+  &.today.selected {
+    background: var(--ad-accent);
+    border-color: var(--ad-accent-hover);
+  }
+}
+
+// Reservation Day List Panel
+.reservation-day-list {
+  flex: 1;
+  min-width: 320px;
+  max-width: 440px;
+  background: var(--ad-surface);
+  border-radius: 16px;
+  border: 1px solid var(--ad-border);
+  box-shadow: var(--ad-shadow);
+  overflow: hidden;
+
+  .list-header {
+    padding: 20px;
+    border-bottom: 1px solid var(--ad-border);
+    background: var(--ad-surface-raised);
+
+    h3 {
+      margin: 0;
+      font-family: var(--font-display);
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--ad-text);
+      letter-spacing: -0.2px;
+    }
+
+    .list-hint {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 12px 0 0;
+      padding: 12px;
+      background: var(--ad-accent-soft);
+      border-radius: 10px;
+      color: var(--ad-text-secondary);
+      font-size: 13px;
+
+      svg {
+        flex-shrink: 0;
+        color: var(--ad-accent);
+      }
+    }
+  }
+
+  .list-content {
+    padding: 16px 20px;
+    max-height: 400px;
+    overflow-y: auto;
+
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--ad-text-muted);
+
+      .empty-icon {
+        width: 48px;
+        height: 48px;
+        margin: 0 auto 16px;
+        color: var(--ad-text-muted);
+        opacity: 0.5;
+      }
+
+      p {
+        margin: 0;
+        font-size: 14px;
+      }
+    }
+  }
+
+  ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+}
+
+// Reservation List Items
+.reservation-list-item {
+  padding: 16px;
+  border-bottom: 1px solid var(--ad-border);
+  border-radius: 12px;
+  transition: all 0.2s ease;
+  margin-bottom: 8px;
+
+  &:hover {
+    background: var(--ad-accent-soft);
+    transform: translateX(4px);
+  }
+
+  &:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+  }
+}
+
+.reservation-guest {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+
+  strong {
+    color: var(--ad-text);
+    font-weight: 600;
+    font-size: 15px;
+  }
+}
+
+.reservation-id {
+  color: var(--ad-text-muted);
+  font-size: 12px;
+  font-weight: 500;
+  padding: 2px 8px;
+  background: var(--ad-surface-raised);
+  border-radius: 6px;
+}
+
+.reservation-dates {
+  font-size: 13px;
+  color: var(--ad-text-secondary);
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+
+  &::before {
+    content: '';
+    display: inline-block;
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: var(--ad-accent);
+  }
+}
+
+.reservation-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.reservation-price {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ad-text);
+}

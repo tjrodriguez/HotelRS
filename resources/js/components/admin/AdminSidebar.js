@@ -1,6 +1,9 @@
 import React from 'react';
 
-export default function AdminSidebar({ activeTab, setActiveTab }) {
+export default function AdminSidebar({ activeTab, setActiveTab, user }) {
+  const initials = user?.name
+    ? user.name.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase()
+    : 'AD';
   const Icon = ({ name }) => {
     const iconMap = {
       dashboard: (
@@ -92,10 +95,10 @@ export default function AdminSidebar({ activeTab, setActiveTab }) {
         ))}
       </nav>
       <div className="sidebar-footer">
-        <div className="user-chip">AD</div>
+        <div className="user-chip">{initials}</div>
         <div className="user-meta">
-          <strong>Admin</strong>
-          <span>Front Desk</span>
+          <strong>{user?.name || 'Admin'}</strong>
+          <span>{user?.role === 'admin' ? 'Manager' : 'Front Desk'}</span>
         </div>
       </div>
     </aside>

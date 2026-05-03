@@ -2,6 +2,7 @@ import React, { useState, useEffect, useContext } from 'react';
 import { AuthContext } from '../../contexts/AuthContext';
 import DataTable from './DataTable';
 import Modal from '../Modal';
+import StatusBadge from './StatusBadge';
 
 export default function ReservationsManagement() {
   const { token } = useContext(AuthContext);
@@ -195,30 +196,31 @@ export default function ReservationsManagement() {
   };
 
   const columns = [
-    { key: 'id', label: 'ID' },
-    { 
-      key: 'guest_info', 
+    { key: 'id', label: 'ID', align: 'right' },
+    {
+      key: 'guest_info',
       label: 'Guest',
       render: (value, row) => `${row.guest?.name || row.guest_name || `Guest #${row.guest_id}`}`
     },
-    { 
-      key: 'room_number', 
+    {
+      key: 'room_number',
       label: 'Room',
       render: (value, row) => `Room ${row.room?.room_number || row.room_id}`
     },
-    { 
-      key: 'check_in_date', 
+    {
+      key: 'check_in_date',
       label: 'Check In',
       render: (value) => new Date(value).toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: '2-digit' })
     },
-    { 
-      key: 'check_out_date', 
+    {
+      key: 'check_out_date',
       label: 'Check Out',
       render: (value) => new Date(value).toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: '2-digit' })
     },
-    { 
-      key: 'nights', 
+    {
+      key: 'nights',
       label: 'Nights',
+      align: 'right',
       render: (value, row) => {
         const start = new Date(row.check_in_date);
         const end = new Date(row.check_out_date);
@@ -226,9 +228,10 @@ export default function ReservationsManagement() {
         return diff;
       }
     },
-    { 
-      key: 'total_price', 
+    {
+      key: 'total_price',
       label: 'Total',
+      align: 'right',
       render: (value, row) => {
         const displayedTotal = parseFloat(
           row.calculated_total_price ?? row.total_price ?? 0,
@@ -240,36 +243,49 @@ export default function ReservationsManagement() {
     {
       key: 'paid_amount',
       label: 'Paid',
+      align: 'right',
       render: (value, row) => `$${parseFloat(row.paid_amount ?? 0).toFixed(2)}`,
     },
     {
       key: 'balance_due',
       label: 'Balance',
+      align: 'right',
       render: (value, row) => `$${parseFloat(row.balance_due ?? 0).toFixed(2)}`,
     },
-    { 
-      key: 'status', 
+    {
+      key: 'status',
       label: 'Status',
-      render: (value) => {
-        const statusColors = {
-          'pending': '#f59e0b',
-          'confirmed': '#10b981',
-          'completed': '#6b7280',
-          'cancelled': '#ef4444',
-        };
-        return (
-          <span style={{ 
-            color: statusColors[value] || '#6b7280',
-            fontWeight: 600,
-            textTransform: 'capitalize'
-          }}>
-            {value}
-          </span>
-        );
-      }
+      render: (value) => <StatusBadge status={value} />,
     },
   ];
 
+
+  // Chevron icons for navigation
+  const ChevronLeft = () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="15 18 9 12 15 6" />
+    </svg>
+  );
+
+  const ChevronRight = () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="9 18 15 12 9 6" />
+    </svg>
+  );
+
+  const CalendarIcon = () => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+      <line x1="16" y1="2" x2="16" y2="6" />
+      <line x1="8" y1="2" x2="8" y2="6" />
+      <line x1="3" y1="10" x2="21" y2="10" />
+    </svg>
+  );
+
+  const goToToday = () => {
+    setCurrentMonth(new Date());
+    setSelectedDate(new Date().toISOString().slice(0, 10));
+  };
 
   return (
     <div className="management-container">
@@ -277,62 +293,100 @@ export default function ReservationsManagement() {
       <div className="reservations-calendar-wrap">
         <div className="calendar">
           <div className="calendar-header">
-            <button className="btn-icon" onClick={() => goMonth(-1)}>{'‹'}</button>
+            <div className="calendar-nav">
+              <button className="btn-icon" onClick={() => goMonth(-1)} aria-label="Previous month">
+                <ChevronLeft />
+              </button>
+              <button className="btn-today" onClick={goToToday}>
+                <CalendarIcon />
+                <span>Today</span>
+              </button>
+              <button className="btn-icon" onClick={() => goMonth(1)} aria-label="Next month">
+                <ChevronRight />
+              </button>
+            </div>
             <div className="calendar-title">{formatMonthTitle(currentMonth)}</div>
-            <button className="btn-icon" onClick={() => goMonth(1)}>{'›'}</button>
           </div>
           <div className="calendar-grid">
-            {['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map((d) => (
-              <div key={d} className="calendar-weekday">{d}</div>
+            {['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map((d, i) => (
+              <div key={d} className={`calendar-weekday ${i === 0 || i === 6 ? 'weekend' : ''}`}>{d}</div>
             ))}
             {getCalendarDays(currentMonth).map((day, idx) => {
-              if (!day) return <div key={idx} className="calendar-day empty" />;
+              if (!day) {
+                // Calculate what day of week this empty cell represents
+                const dayOfWeek = idx % 7;
+                const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+                return <div key={idx} className={`calendar-day empty ${isWeekend ? 'weekend' : ''}`} />;
+              }
               const key = day.toISOString().slice(0,10);
-              const has = reservationsByDate[key] && reservationsByDate[key].length > 0;
+              const dayReservations = reservationsByDate[key] || [];
+              const hasReservations = dayReservations.length > 0;
               const isToday = key === new Date().toISOString().slice(0,10);
-              const classes = ['calendar-day', has ? 'reserved' : '', isToday ? 'today' : '', selectedDate === key ? 'selected' : ''].join(' ');
+              const isSelected = selectedDate === key;
+              const isWeekend = day.getDay() === 0 || day.getDay() === 6;
+              const isOtherMonth = day.getMonth() !== currentMonth.getMonth();
+
+              const classes = [
+                'calendar-day',
+                hasReservations ? 'reserved' : '',
+                isToday ? 'today' : '',
+                isSelected ? 'selected' : '',
+                isWeekend ? 'weekend' : '',
+                isOtherMonth ? 'other-month' : ''
+              ].filter(Boolean).join(' ');
+
               return (
                 <div key={idx} className={classes} onClick={() => setSelectedDate(key)}>
-                  <div className="date-num">{day.getDate()}</div>
-                  {has && <div className="dot" />}
+                  <span className="date-num">{day.getDate()}</span>
+                  {hasReservations && (
+                    <span className="reservation-count">{dayReservations.length}</span>
+                  )}
                 </div>
               );
             })}
           </div>
         </div>
         <div className="reservation-day-list">
-          <h3>{selectedDate ? formatSelectedDate(selectedDate) : 'Select a date'}</h3>
-          {!selectedDate && <p className="muted">Click a highlighted date to see reservations.</p>}
-          {selectedDate && (!reservationsByDate[selectedDate] || reservationsByDate[selectedDate].length === 0) && (
-            <p>No reservations on this date.</p>
-          )}
-          {selectedDate && reservationsByDate[selectedDate] && (
-            <ul>
-              {reservationsByDate[selectedDate].map((r) => (
-                <li key={r.id} className="reservation-list-item">
-                  <div style={{ marginBottom: '8px' }}>
-                    <strong>{r.guest?.name || r.guest_name || `Guest #${r.guest_id}`}</strong>
-                    <span style={{ marginLeft: '8px', color: '#6b7280', fontSize: '12px' }}>ID: {r.id}</span>
-                  </div>
-                  <div style={{ fontSize: '14px', color: '#475569' }}>
-                    Room {r.room?.room_number || r.room_id} • {new Date(r.check_in_date).toLocaleDateString()} - {new Date(r.check_out_date).toLocaleDateString()}
-                  </div>
-                  <div style={{ fontSize: '13px', marginTop: '4px' }}>
-                    <span style={{ 
-                      color: r.status === 'confirmed' ? '#10b981' : r.status === 'pending' ? '#f59e0b' : r.status === 'cancelled' ? '#ef4444' : '#6b7280',
-                      fontWeight: 600,
-                      textTransform: 'capitalize'
-                    }}>
-                      {r.status}
-                    </span>
-                    <span style={{ marginLeft: '12px', color: '#6b7280' }}>
-                      ${parseFloat(r.total_price || 0).toFixed(2)}
-                    </span>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
+          <div className="list-header">
+            <h3>{selectedDate ? formatSelectedDate(selectedDate) : 'Select a Date'}</h3>
+            {!selectedDate && (
+              <p className="list-hint">
+                <CalendarIcon />
+                <span>Click any date on the calendar to view reservations</span>
+              </p>
+            )}
+          </div>
+          <div className="list-content">
+            {selectedDate && (!reservationsByDate[selectedDate] || reservationsByDate[selectedDate].length === 0) && (
+              <div className="empty-state">
+                <svg className="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                  <rect x="3" y="4" width="18" height="18" rx="2" />
+                  <path d="M16 2v4M8 2v4M3 10h18" />
+                  <path d="M9 14h.01M15 14h.01M9 18h.01M15 18h.01" strokeLinecap="round" />
+                </svg>
+                <p>No reservations scheduled for this date</p>
+              </div>
+            )}
+            {selectedDate && reservationsByDate[selectedDate] && (
+              <ul>
+                {reservationsByDate[selectedDate].map((r) => (
+                  <li key={r.id} className="reservation-list-item">
+                    <div className="reservation-guest">
+                      <strong>{r.guest?.name || r.guest_name || `Guest #${r.guest_id}`}</strong>
+                      <span className="reservation-id">ID: {r.id}</span>
+                    </div>
+                    <div className="reservation-dates">
+                      Room {r.room?.room_number || r.room_id} • {new Date(r.check_in_date).toLocaleDateString()} - {new Date(r.check_out_date).toLocaleDateString()}
+                    </div>
+                    <div className="reservation-meta">
+                      <StatusBadge status={r.status} />
+                      <span className="reservation-price">${parseFloat(r.total_price || 0).toFixed(2)}</span>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
         </div>
       </div>
       <DataTable

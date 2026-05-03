@@ -73,7 +73,7 @@ export default function UsersManagement() {
   };
 
   const columns = [
-    { key: 'id', label: 'ID' },
+    { key: 'id', label: 'ID', align: 'right' },
     { key: 'name', label: 'Name' },
     { key: 'email', label: 'Email' },
     { key: 'role', label: 'Role' },

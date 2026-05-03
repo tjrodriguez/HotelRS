@@ -11,5 +11,9 @@ export default function App() {
     return <Login />;
   }
 
-  return isAdmin ? <AdminDashboard /> : <GuestBooking />;
+  if (isAdmin) {
+    return <AdminDashboard />;
+  }
+
+  return <GuestBooking />;
 }

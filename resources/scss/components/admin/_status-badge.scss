@@ -1,0 +1,71 @@
+// Status Badge Component Styles
+
+.table-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 12px;
+  letter-spacing: 0.2px;
+
+  .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+    flex-shrink: 0;
+  }
+
+  // Status variants
+  &.status-available {
+    background: var(--ad-success-soft, rgba(5, 150, 105, 0.08));
+    color: var(--ad-success, #059669);
+
+    .dot { background: var(--ad-success, #059669); }
+  }
+
+  &.status-occupied {
+    background: var(--ad-danger-soft, rgba(220, 38, 38, 0.08));
+    color: var(--ad-danger, #dc2626);
+
+    .dot { background: var(--ad-danger, #dc2626); }
+  }
+
+  &.status-default {
+    background: rgba(107, 101, 96, 0.06);
+    color: var(--ad-text-muted, #9a948e);
+
+    .dot { background: var(--ad-text-muted, #9a948e); }
+  }
+
+  &.status-pending {
+    background: var(--ad-warning-soft, rgba(217, 119, 6, 0.08));
+    color: var(--ad-warning, #d97706);
+
+    .dot { background: var(--ad-warning, #d97706); }
+  }
+
+  &.status-confirmed {
+    background: var(--ad-success-soft, rgba(5, 150, 105, 0.08));
+    color: var(--ad-success, #059669);
+
+    .dot { background: var(--ad-success, #059669); }
+  }
+
+  &.status-completed {
+    background: rgba(107, 101, 96, 0.06);
+    color: var(--ad-text-secondary, #6b6560);
+
+    .dot { background: var(--ad-text-secondary, #6b6560); }
+  }
+
+  &.status-cancelled,
+  &.status-expired {
+    background: var(--ad-danger-soft, rgba(220, 38, 38, 0.08));
+    color: var(--ad-danger, #dc2626);
+
+    .dot { background: var(--ad-danger, #dc2626); }
+  }
+}

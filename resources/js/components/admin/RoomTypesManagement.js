@@ -72,7 +72,7 @@ export default function RoomTypesManagement() {
   };
 
   const columns = [
-    { key: 'id', label: 'ID' },
+    { key: 'id', label: 'ID', align: 'right' },
     { key: 'name', label: 'Name' },
     { key: 'description', label: 'Description' },
   ];

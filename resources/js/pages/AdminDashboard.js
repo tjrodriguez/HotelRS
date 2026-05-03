@@ -35,13 +35,13 @@ export default function AdminDashboard() {
       case 'activity-logs':
         return <ActivityLogsManagement />;
       default:
-        return <DashboardHome />;
+        return <DashboardHome setActiveTab={setActiveTab} />;
     }
   };
 
   return (
     <div className="admin-dashboard">
-      <AdminSidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+      <AdminSidebar activeTab={activeTab} setActiveTab={setActiveTab} user={user} />
       <main className="admin-main">
         <div className="admin-header">
           <div>
@@ -50,8 +50,8 @@ export default function AdminDashboard() {
           </div>
           <div className="admin-user-info">
             <span className="admin-badge">{user?.role || 'Administrator'}</span>
-            <span>{today}</span>
-            <button onClick={logout} className="btn btn-secondary">
+            <span className="header-date">{today}</span>
+            <button onClick={logout} className="btn-logout">
               Logout
             </button>
           </div>
@@ -62,7 +62,7 @@ export default function AdminDashboard() {
   );
 }
 
-function DashboardHome() {
+function DashboardHome({ setActiveTab }) {
   const weeklyRevenue = [32.4, 28.1, 41.2, 37.8, 44.6, 52.3, 48.2];
   const weekDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
@@ -72,6 +72,7 @@ function DashboardHome() {
       value: '73%',
       note: '22 of 30 rooms',
       trend: '+4.2%',
+      trendClass: 'success',
       icon: (
         <path d="M3 20V10l9-7 9 7v10M7 20v-6h10v6" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
       ),
@@ -81,6 +82,7 @@ function DashboardHome() {
       value: 'P48,200',
       note: '+12% vs yesterday',
       trend: '+12%',
+      trendClass: 'success',
       icon: (
         <>
           <rect x="3" y="5" width="18" height="14" rx="2" strokeWidth="1.8" />
@@ -93,6 +95,7 @@ function DashboardHome() {
       value: '7',
       note: '3 pending arrival',
       trend: 'On track',
+      trendClass: 'neutral',
       icon: (
         <>
           <path d="M4 6h16v12H4z" strokeWidth="1.8" />
@@ -105,6 +108,7 @@ function DashboardHome() {
       value: '4',
       note: '2 expiring in 48h',
       trend: 'Review',
+      trendClass: 'warning',
       icon: (
         <path d="M20 12l-8 8-2.5-2.5L15 12 9.5 6.5 12 4l8 8zM6 8a2 2 0 1 0 0 .01V8z" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
       ),
@@ -120,6 +124,13 @@ function DashboardHome() {
     'New user created: Ben Flores',
   ];
 
+  const quickActions = [
+    { label: 'New Reservation', tab: 'reservations' },
+    { label: 'Check In Guest', tab: 'rooms' },
+    { label: 'Add Promotion', tab: 'promotions' },
+    { label: 'Mark Room Clean', tab: 'rooms' },
+  ];
+
   return (
     <div className="dashboard-home">
       <h2>Today at a Glance</h2>
@@ -127,10 +138,10 @@ function DashboardHome() {
         {cards.map((card) => (
           <div className="stat-card" key={card.title}>
             <div className="stat-top-row">
-              <span className="stat-icon" aria-hidden>
+              <span className="stat-icon" aria-hidden="true">
                 <svg viewBox="0 0 24 24" fill="none">{card.icon}</svg>
               </span>
-              <span className="stat-trend">{card.trend}</span>
+              <span className={`stat-trend ${card.trendClass}`}>{card.trend}</span>
             </div>
             <h3>{card.title}</h3>
             <p className="stat-number">{card.value}</p>
@@ -173,10 +184,11 @@ function DashboardHome() {
         <section className="dashboard-panel quick-actions-panel">
           <h3>Quick Actions</h3>
           <div className="quick-actions-grid">
-            <button type="button">New Reservation</button>
-            <button type="button">Check In Guest</button>
-            <button type="button">Add Promotion</button>
-            <button type="button">Mark Room Clean</button>
+            {quickActions.map((action) => (
+              <button key={action.label} type="button" onClick={() => setActiveTab(action.tab)}>
+                {action.label}
+              </button>
+            ))}
           </div>
         </section>
       </div>

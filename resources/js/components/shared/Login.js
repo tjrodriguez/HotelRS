@@ -132,7 +132,7 @@ export default function Login() {
               <button type="submit" disabled={loading} className="btn-primary">{loading ? 'Signing in...' : 'Sign In'}</button>
 
               <div className="form-actions">
-                <small>Try demo: admin@luxestays.com</small>
+                <small>Try demo: admin@hotel.com / password</small>
                 <button type="button">Need help?</button>
               </div>
             </form>

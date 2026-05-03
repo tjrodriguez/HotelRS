@@ -82,9 +82,9 @@ export default function PaymentsManagement() {
   };
 
   const columns = [
-    { key: 'id', label: 'ID' },
-    { key: 'reservation_id', label: 'Reservation ID' },
-    { key: 'amount', label: 'Amount', render: (val) => `$${val}` },
+    { key: 'id', label: 'ID', align: 'right' },
+    { key: 'reservation_id', label: 'Reservation ID', align: 'right' },
+    { key: 'amount', label: 'Amount', align: 'right', render: (val) => `$${parseFloat(val).toFixed(2)}` },
     { key: 'payment_method', label: 'Method' },
     { key: 'status', label: 'Status' },
   ];

@@ -1,0 +1,50 @@
+// Guest Header Component Styles
+
+.guest-booking {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background: linear-gradient(180deg, #faf8f2 0%, #f3f4f6 100%);
+}
+
+.guest-header {
+  background:
+    radial-gradient(circle at 15% 18%, rgba(255, 255, 255, 0.18), transparent 40%),
+    linear-gradient(180deg, #0f766e 0%, #0f766e 42%, #115e59 100%);
+  color: white;
+  padding: 16px 20px;
+  box-shadow: 0 12px 28px rgba(15, 118, 110, 0.22);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+
+  h1 {
+    font-size: 30px;
+    margin: 0;
+    font-weight: 800;
+    font-family: var(--font-display);
+    letter-spacing: -0.8px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: white;
+  }
+}
+
+.header-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.welcome {
+  font-size: 14px;
+  opacity: 0.9;
+}

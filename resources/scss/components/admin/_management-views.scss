@@ -1,0 +1,142 @@
+// Shared Management View Styles
+// Applies to: Users, Rooms, RoomTypes, Payments, Promotions, ActivityLogs
+
+.management-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+// Table filters
+.table-filters {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+
+  input,
+  select {
+    padding: 8px 12px;
+    border: 1px solid var(--ad-border, rgba(241, 240, 235, 0.08));
+    border-radius: 8px;
+    background: var(--ad-surface-raised, #2a2824);
+    color: var(--ad-text, #f1f0eb);
+    font-size: 14px;
+    font-family: var(--font-body);
+
+    &:focus {
+      outline: none;
+      border-color: var(--ad-accent, #c9961a);
+      box-shadow: 0 0 0 3px var(--ad-accent-soft, rgba(201, 150, 26, 0.15));
+    }
+  }
+}
+
+// Pagination
+.pagination {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--ad-border, rgba(241, 240, 235, 0.08));
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.pagination-info {
+  color: var(--ad-text-muted, #8a8780);
+  font-size: 14px;
+}
+
+.pagination-controls {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+
+  span {
+    color: var(--ad-text-secondary, #c4c2bb);
+    font-size: 14px;
+  }
+}
+
+// Status select in modals
+.status-select {
+  padding: 10px 14px;
+  border: 1px solid var(--ad-border, rgba(241, 240, 235, 0.08));
+  border-radius: 8px;
+  background: var(--ad-surface-raised, #2a2824);
+  color: var(--ad-text, #f1f0eb);
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:focus {
+    outline: none;
+    border-color: var(--ad-accent, #c9961a);
+    box-shadow: 0 0 0 3px var(--ad-accent-soft, rgba(201, 150, 26, 0.15));
+  }
+
+  &.available {
+    border-color: var(--ad-success, #059669);
+    color: var(--ad-success, #059669);
+  }
+
+  &.occupied {
+    border-color: var(--ad-danger, #dc2626);
+    color: var(--ad-danger, #dc2626);
+  }
+}
+
+.status-badge {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.status-row {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+
+  > div {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+}
+
+// Log details modal
+.log-details {
+  display: grid;
+  gap: 12px;
+
+  div {
+    color: var(--ad-text, #f1f0eb);
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  strong {
+    color: var(--ad-text-secondary, #c4c2bb);
+    font-weight: 600;
+  }
+}
+
+.log-json {
+  white-space: pre-wrap;
+  background: var(--ad-surface-raised, #2a2824);
+  padding: 12px;
+  border-radius: 8px;
+  max-height: 300px;
+  overflow: auto;
+  color: var(--ad-text, #f1f0eb);
+  font-size: 12px;
+  font-family: monospace;
+  border: 1px solid var(--ad-border, rgba(241, 240, 235, 0.08));
+  margin-top: 8px;
+}

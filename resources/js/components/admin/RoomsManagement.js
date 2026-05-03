@@ -2,6 +2,7 @@ import React, { useState, useEffect, useContext } from 'react';
 import { AuthContext } from '../../contexts/AuthContext';
 import DataTable from './DataTable';
 import Modal from '../Modal';
+import StatusBadge from './StatusBadge';
 
 export default function RoomsManagement() {
   const { token } = useContext(AuthContext);
@@ -98,25 +99,20 @@ export default function RoomsManagement() {
   };
 
   const columns = [
-    { key: 'id', label: 'ID' },
+    { key: 'id', label: 'ID', align: 'right' },
     { key: 'room_number', label: 'Room Number' },
-    { key: 'room_type_id', label: 'Type' },
+    { key: 'room_type_id', label: 'Type', align: 'right' },
     {
       key: 'room_status_id',
       label: 'Status',
       render: (val, row) => {
         const statusName = row.room_status?.status_name || (val == 2 ? 'Occupied' : 'Vacant');
-        const key = (row.room_status?.status_name || statusName).toLowerCase();
-        const className = key.includes('occup') ? 'status-occupied' : key.includes('avail') || key.includes('vacant') ? 'status-available' : 'status-default';
-        return (
-          <span className={`table-status ${className}`}>
-            <span className="dot" aria-hidden />
-            {statusName}
-          </span>
-        );
+        const statusKey = (row.room_status?.status_name || statusName).toLowerCase();
+        const status = statusKey.includes('occup') ? 'occupied' : statusKey.includes('avail') || statusKey.includes('vacant') ? 'available' : 'default';
+        return <StatusBadge status={status} label={statusName} />;
       },
     },
-    { key: 'price_per_night', label: 'Price/Night', render: (val) => `$${val}` },
+    { key: 'price_per_night', label: 'Price/Night', align: 'right', render: (val) => `$${parseFloat(val).toFixed(2)}` },
   ];
 
   return (
@@ -144,7 +140,7 @@ export default function RoomsManagement() {
           </div>
           <div className="form-group status-row">
             <label>Status</label>
-            <div style={{display: 'flex', alignItems: 'center', gap: '12px'}}>
+            <div>
               <select
                 className={`status-select ${formData.room_status_id == 1 ? 'available' : formData.room_status_id == 2 ? 'occupied' : ''}`}
                 value={formData.room_status_id}

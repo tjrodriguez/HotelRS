@@ -1,0 +1,193 @@
+// Admin Sidebar Component Styles
+
+.admin-sidebar {
+  width: 280px;
+  background: var(--ad-sidebar-bg, linear-gradient(180deg, #1a3a3a 0%, #0f2e2e 100%));
+  border-right: 1px solid var(--ad-border, rgba(45, 42, 38, 0.08));
+  color: var(--ad-sidebar-text, #f1f0eb);
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--ad-shadow-lg, 0 12px 40px rgba(45, 42, 38, 0.1));
+  position: relative;
+
+  .sidebar-header {
+    border-bottom: 1px solid var(--ad-border, rgba(45, 42, 38, 0.08));
+    padding: 28px 24px 20px;
+
+    h2 {
+      color: var(--ad-sidebar-text, #f1f0eb);
+      font-family: var(--font-display);
+      font-size: 26px;
+      font-weight: 700;
+      line-height: 1.1;
+      margin-bottom: 6px;
+      letter-spacing: -0.5px;
+    }
+
+    .sidebar-subtitle {
+      color: var(--ad-sidebar-muted, rgba(241, 240, 235, 0.7));
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 1.4px;
+      text-transform: uppercase;
+    }
+  }
+
+  .sidebar-nav {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 2px;
+    padding: 16px 12px;
+    overflow-y: auto;
+  }
+
+  .sidebar-item {
+    align-items: center;
+    background: transparent;
+    border: none;
+    border-left: 3px solid transparent;
+    border-radius: 0 10px 10px 0;
+    color: var(--ad-sidebar-muted, rgba(241, 240, 235, 0.7));
+    cursor: pointer;
+    display: flex;
+    gap: 14px;
+    margin: 0;
+    padding: 12px 16px;
+    text-align: left;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+
+    .icon {
+      align-items: center;
+      display: inline-flex;
+      justify-content: center;
+
+      svg {
+        width: 20px;
+        height: 20px;
+        stroke: currentColor;
+        stroke-width: 1.8;
+      }
+    }
+
+    .label {
+      font-size: 14px;
+      font-weight: 500;
+      letter-spacing: 0.2px;
+    }
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--ad-sidebar-text, #f1f0eb);
+    }
+
+    &.active {
+      background: rgba(255, 255, 255, 0.1);
+      border-left-color: var(--ad-accent, #c9961a);
+      color: var(--ad-sidebar-text, #f1f0eb);
+      font-weight: 600;
+
+      .icon svg {
+        stroke: var(--ad-accent, #c9961a);
+      }
+    }
+  }
+
+  .sidebar-footer {
+    align-items: center;
+    border-top: 1px solid var(--ad-border, rgba(45, 42, 38, 0.08));
+    display: flex;
+    gap: 12px;
+    padding: 16px 20px;
+
+    .user-chip {
+      align-items: center;
+      background: var(--ad-accent-soft, rgba(201, 150, 26, 0.12));
+      border: 1px solid var(--ad-accent, #c9961a);
+      border-radius: 999px;
+      color: var(--ad-accent, #c9961a);
+      display: inline-flex;
+      font-size: 12px;
+      font-weight: 700;
+      height: 36px;
+      justify-content: center;
+      width: 36px;
+    }
+
+    .user-meta {
+      display: flex;
+      flex-direction: column;
+      line-height: 1.25;
+
+      strong {
+        color: var(--ad-sidebar-text, #f1f0eb);
+        font-size: 13px;
+        font-weight: 600;
+      }
+
+      span {
+        color: var(--ad-sidebar-muted, rgba(241, 240, 235, 0.7));
+        font-size: 11px;
+      }
+    }
+  }
+}
+
+// Mobile sidebar styles
+@media (max-width: 768px) {
+  .admin-sidebar {
+    width: 100%;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 100;
+    flex-direction: row;
+    height: 64px;
+    border-right: none;
+    border-top: 1px solid var(--ad-border, rgba(45, 42, 38, 0.08));
+    box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.15);
+
+    .sidebar-header,
+    .sidebar-footer,
+    .theme-toggle {
+      display: none;
+    }
+
+    .sidebar-nav {
+      flex-direction: row;
+      gap: 0;
+      padding: 0;
+      overflow-x: auto;
+      justify-content: center;
+      align-items: center;
+      width: 100%;
+    }
+
+    .sidebar-item {
+      border-left: none;
+      border-bottom: 2px solid transparent;
+      min-width: unset;
+      flex-direction: column;
+      gap: 4px;
+      padding: 8px 14px;
+      border-radius: 0;
+      font-size: 11px;
+
+      .icon svg {
+        width: 20px;
+        height: 20px;
+      }
+
+      .label {
+        font-size: 11px;
+      }
+
+      &.active {
+        border-bottom-color: var(--ad-accent, #c9961a);
+        border-left-color: transparent;
+        background: var(--ad-accent-soft, rgba(201, 150, 26, 0.12));
+      }
+    }
+  }
+}

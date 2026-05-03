@@ -57,11 +57,11 @@ export default function ActivityLogsManagement() {
   useEffect(() => { if (page > pageCount) setPage(1); }, [pageCount]);
 
   const columns = [
-    { key: 'id', label: 'ID' },
+    { key: 'id', label: 'ID', align: 'right' },
     { key: 'user', label: 'User', render: (val, row) => (row.user ? row.user.name : row.user_id) },
     { key: 'action', label: 'Action', render: (val) => (val ? String(val).slice(0, 60) : '') },
     { key: 'entity_type', label: 'Entity Type' },
-    { key: 'entity_id', label: 'Entity ID' },
+    { key: 'entity_id', label: 'Entity ID', align: 'right' },
     { key: 'created_at', label: 'Timestamp', render: (val) => (val ? new Date(val).toLocaleString() : '') },
   ];
 
@@ -69,9 +69,9 @@ export default function ActivityLogsManagement() {
 
   return (
     <div className="management-container">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+      <div className="management-header">
         <h2>Activity Logs</h2>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+        <div className="table-filters">
           <input placeholder="Search logs..." value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} />
           <select value={pageSize} onChange={(e) => { setPageSize(Number(e.target.value)); setPage(1); }}>
             <option value={5}>5</option>
@@ -84,11 +84,11 @@ export default function ActivityLogsManagement() {
 
       <DataTable columns={columns} data={current} isLoading={isLoading} onEdit={handleView} />
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 12 }}>
-        <div style={{ color: 'var(--secondary)' }}>
+      <div className="pagination">
+        <div className="pagination-info">
           Showing {(filtered.length === 0) ? 0 : (page - 1) * pageSize + 1} - {Math.min(page * pageSize, filtered.length)} of {filtered.length}
         </div>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+        <div className="pagination-controls">
           <button className="btn btn-sm" disabled={page <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))}>Previous</button>
           <span>Page {page} / {pageCount}</span>
           <button className="btn btn-sm" disabled={page >= pageCount} onClick={() => setPage((p) => Math.min(pageCount, p + 1))}>Next</button>
@@ -97,13 +97,13 @@ export default function ActivityLogsManagement() {
 
       {viewLog && (
         <Modal title={`Log #${viewLog.id}`} onClose={() => setViewLog(null)}>
-          <div style={{ display: 'grid', gap: 8 }}>
+          <div className="log-details">
             <div><strong>User:</strong> {viewLog.user ? viewLog.user.name : viewLog.user_id}</div>
             <div><strong>Action:</strong> {viewLog.action}</div>
             <div><strong>Entity:</strong> {viewLog.entity_type} #{viewLog.entity_id}</div>
             <div><strong>When:</strong> {viewLog.created_at ? new Date(viewLog.created_at).toLocaleString() : ''}</div>
             <div><strong>Details:</strong>
-              <pre style={{ whiteSpace: 'pre-wrap', background: '#f7f7f7', padding: 8, borderRadius: 6, maxHeight: 300, overflow: 'auto' }}>{JSON.stringify(viewLog.metadata || viewLog.data || viewLog, null, 2)}</pre>
+              <pre className="log-json">{JSON.stringify(viewLog.metadata || viewLog.data || viewLog, null, 2)}</pre>
             </div>
           </div>
         </Modal>

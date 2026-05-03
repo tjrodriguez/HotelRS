@@ -1,0 +1,61 @@
+// Guest Search & Filter Styles
+
+.search-panel {
+  background-color: rgba(255, 255, 255, 0.9);
+  border-radius: 20px;
+  padding: 24px;
+  box-shadow: var(--shadow-lg, 0 10px 15px -3px rgba(0, 0, 0, 0.1));
+  border: 1px solid rgba(231, 229, 228, 0.8);
+
+  h2 {
+    margin-top: 0;
+    margin-bottom: 20px;
+    font-size: 20px;
+    font-family: var(--font-display);
+    color: var(--dark, #1f2937);
+  }
+}
+
+.search-filters {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 16px;
+  align-items: flex-end;
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+
+  label {
+    font-weight: 500;
+    font-size: 14px;
+    color: var(--dark, #1f2937);
+  }
+
+  input,
+  select {
+    padding: 10px 12px;
+    border: 1px solid var(--border, #e5e7eb);
+    border-radius: 4px;
+    font-size: 14px;
+    background: white;
+
+    &:focus {
+      outline: none;
+      border-color: var(--primary, #3b82f6);
+    }
+  }
+}
+
+.search-btn {
+  padding: 10px 24px;
+}
+
+// Rooms Grid
+.rooms-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+}

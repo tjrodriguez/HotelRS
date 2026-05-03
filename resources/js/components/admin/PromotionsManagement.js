@@ -2,6 +2,7 @@ import React, { useState, useEffect, useContext } from 'react';
 import { AuthContext } from '../../contexts/AuthContext';
 import DataTable from './DataTable';
 import Modal from '../Modal';
+import StatusBadge from './StatusBadge';
 
 export default function PromotionsManagement() {
   const { token } = useContext(AuthContext);
@@ -99,9 +100,9 @@ export default function PromotionsManagement() {
   };
 
   const columns = [
-    { key: 'id', label: 'ID' },
+    { key: 'id', label: 'ID', align: 'right' },
     { key: 'code', label: 'Code' },
-    { key: 'discount_percentage', label: 'Discount', render: (val) => `${val}%` },
+    { key: 'discount_percentage', label: 'Discount', align: 'right', render: (val) => `${val}%` },
     { key: 'valid_from', label: 'Valid From' },
     { key: 'valid_until', label: 'Valid Until' },
     {
@@ -111,23 +112,23 @@ export default function PromotionsManagement() {
         const now = new Date();
         const from = row.valid_from ? new Date(row.valid_from) : null;
         const until = row.valid_until ? new Date(row.valid_until) : null;
+        let status = 'inactive';
         let label = 'Inactive';
-        let cls = 'status-default';
         if (from && until && now >= from && now <= until) {
-          label = 'Active'; cls = 'status-available';
+          status = 'active'; label = 'Active';
         } else if (until && now > until) {
-          label = 'Expired'; cls = 'status-expired';
+          status = 'expired'; label = 'Expired';
         } else if (from && now < from) {
-          label = 'Upcoming'; cls = 'status-default';
+          status = 'upcoming'; label = 'Upcoming';
         }
-        return <span className={`table-status ${cls}`}><span className="dot"/> {label}</span>;
+        return <StatusBadge status={status} label={label} />;
       }
     },
   ];
 
   return (
     <div className="management-container">
-      <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+      <div className="management-header">
         <h2>Promotions Management</h2>
         <button className="btn btn-primary" onClick={handleCreate}>New Promotion</button>
       </div>
