@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { apiClient } from '../../services/apiClient';
+import apiClient from '../../services/apiClient';
 import DataTable from './DataTable';
 import Modal from '../Modal';
 import StatusBadge from './StatusBadge';
@@ -9,6 +9,8 @@ export default function RoomsManagement() {
   const [isLoading, setIsLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [editingRoom, setEditingRoom] = useState(null);
+  const [filterStatus, setFilterStatus] = useState('all');
+  const [error, setError] = useState(null);
   const [formData, setFormData] = useState({
     room_number: '',
     room_type_id: '',
@@ -22,12 +24,14 @@ export default function RoomsManagement() {
 
   const fetchRooms = async () => {
     setIsLoading(true);
+    setError(null);
     try {
       const data = await apiClient.getRooms();
       const items = Array.isArray(data) ? data : data?.data || [];
       setRooms(items);
     } catch (error) {
       console.error('Error fetching rooms:', error);
+      setError('Failed to load rooms. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -68,22 +72,56 @@ export default function RoomsManagement() {
     }
   };
 
+  const filteredRooms = filterStatus === 'all' ? rooms : rooms.filter((r) => r.status === filterStatus);
+
+  const availableCount = rooms.filter((r) => r.status === 'available').length;
+  const occupiedCount = rooms.filter((r) => r.status === 'occupied').length;
+  const maintenanceCount = rooms.filter((r) => r.status === 'maintenance' || r.status === 'cleaning' || r.status === 'out_of_order').length;
+
   const columns = [
     { key: 'id', label: 'ID', align: 'right' },
     { key: 'room_number', label: 'Room Number' },
-    { key: 'room_type_id', label: 'Type', align: 'right' },
+    { key: 'room_type', label: 'Type', render: (val) => val?.name || 'Unknown' },
     {
       key: 'status',
       label: 'Status',
       render: (val) => <StatusBadge status={val} label={val ? val.charAt(0).toUpperCase() + val.slice(1) : 'Unknown'} />,
     },
-    { key: 'price_per_night', label: 'Price/Night', align: 'right', render: (val) => `$${parseFloat(val).toFixed(2)}` },
+    { key: 'price_per_night', label: 'Price/Night', align: 'right', render: (val) => `$${val ? parseFloat(val).toFixed(2) : '0.00'}` },
   ];
 
   return (
     <div className="management-container">
-      <h2>Rooms Management</h2>
-      <DataTable columns={columns} data={rooms} isLoading={isLoading} onEdit={handleEdit} onDelete={handleDelete} />
+      <div className="management-header">
+        <h2>Rooms Management</h2>
+        <div className="room-stats">
+          <div className="stat-card available">
+            <span className="stat-label">Available</span>
+            <span className="stat-value">{availableCount}</span>
+          </div>
+          <div className="stat-card occupied">
+            <span className="stat-label">Occupied</span>
+            <span className="stat-value">{occupiedCount}</span>
+          </div>
+          <div className="stat-card maintenance">
+            <span className="stat-label">Maintenance</span>
+            <span className="stat-value">{maintenanceCount}</span>
+          </div>
+        </div>
+      </div>
+      {error && <div className="error-alert">{error}</div>}
+      <div className="filter-bar">
+        <label>Filter by Status:</label>
+        <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}>
+          <option value="all">All Rooms ({rooms.length})</option>
+          <option value="available">Available ({availableCount})</option>
+          <option value="occupied">Occupied ({occupiedCount})</option>
+          <option value="cleaning">Cleaning</option>
+          <option value="maintenance">Maintenance</option>
+          <option value="out_of_order">Out of Order</option>
+        </select>
+      </div>
+      <DataTable columns={columns} data={filteredRooms} isLoading={isLoading} onEdit={handleEdit} onDelete={handleDelete} />
 
       {showModal && (
         <Modal title="Edit Room" onClose={() => setShowModal(false)}>

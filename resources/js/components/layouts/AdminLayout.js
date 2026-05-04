@@ -26,7 +26,7 @@ const TAB_TO_PATH = {
 };
 
 export default function AdminLayout() {
-  const { logout, user } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [activeTab, setActiveTab] = useState(() => {

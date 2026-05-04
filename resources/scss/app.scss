@@ -13,6 +13,7 @@
 @use 'base/global';
 
 // 3. Shared Components (used across admin/guest)
+@use 'components/notifications';
 @use 'components/shared/login';
 @use 'components/shared/button';
 @use 'components/shared/feedback';
@@ -35,6 +36,7 @@
 @use 'components/guest/booking-modal';
 @use 'components/guest/booking-history';
 @use 'components/guest/booking-history-extended';
+@use 'components/guest/wallet';
 
 // 6. Page-level Styles (highest specificity)
 @use 'components/pages/admin-dashboard';

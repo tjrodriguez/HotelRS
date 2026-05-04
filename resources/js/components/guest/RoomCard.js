@@ -29,7 +29,7 @@ const PRICE_ICON = (
   </svg>
 );
 
-export default function RoomCard({ room, onBook }) {
+export default function RoomCard({ room, onBook, onShowCalendar }) {
   const [showCalendar, setShowCalendar] = useState(false);
 
   // Data extraction with fallbacks
@@ -67,8 +67,13 @@ export default function RoomCard({ room, onBook }) {
       // For available rooms, book immediately with default dates
       onBook();
     } else {
-      // For unavailable rooms, show the availability calendar
-      setShowCalendar(true);
+      // For unavailable rooms, prefer delegating calendar showing to parent
+      if (typeof onShowCalendar === 'function') {
+        onShowCalendar(room);
+      } else {
+        // fallback to local modal when parent doesn't provide a handler
+        setShowCalendar(true);
+      }
     }
   };
 
@@ -137,7 +142,7 @@ export default function RoomCard({ room, onBook }) {
         {isAvailable ? 'Book Now' : `${statusConfig.label} - See Availability`}
       </button>
 
-      {showCalendar && (
+      {showCalendar && !onShowCalendar && (
         <div className="calendar-modal-overlay">
           <div className="calendar-modal">
             <RoomAvailabilityCalendar

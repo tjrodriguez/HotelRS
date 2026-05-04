@@ -48,6 +48,11 @@ class User extends Authenticatable
         return $this->hasMany(ActivityLog::class);
     }
 
+    public function wallet()
+    {
+        return $this->hasOne(Wallet::class);
+    }
+
     public function isAdmin(): bool
     {
         return $this->role === 'admin';

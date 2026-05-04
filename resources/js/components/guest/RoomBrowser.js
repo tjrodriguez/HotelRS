@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { apiClient } from '../../services/apiClient';
 import { useAuth } from '../../contexts/AuthContext';
 import RoomCard from './RoomCard';
+import RoomAvailabilityCalendar from './RoomAvailabilityCalendar';
 import BookingModal from './BookingModal';
 
 export default function RoomBrowser({ showHero = true }) {
@@ -40,6 +41,8 @@ export default function RoomBrowser({ showHero = true }) {
   const [isLoading, setIsLoading] = useState(false);
   const [showBookingModal, setShowBookingModal] = useState(false);
   const [selectedRoom, setSelectedRoom] = useState(null);
+  const [showCalendarModal, setShowCalendarModal] = useState(false);
+  const [calendarRoom, setCalendarRoom] = useState(null);
   const [filters, setFilters] = useState({
     checkInDate: formatLocalDate(todayDate),
     checkOutDate: formatLocalDate(tomorrowDate),
@@ -172,7 +175,8 @@ export default function RoomBrowser({ showHero = true }) {
               <RoomCard
                 key={room.id}
                 room={room}
-                onBook={() => handleRoomSelect(room)}
+                onBook={(checkInDate, checkOutDate) => handleRoomSelect(room, checkInDate, checkOutDate)}
+                onShowCalendar={(r) => { setCalendarRoom(r); setShowCalendarModal(true); }}
               />
             ))}
           </div>
@@ -187,6 +191,23 @@ export default function RoomBrowser({ showHero = true }) {
           onClose={() => setShowBookingModal(false)}
           onSuccess={handleBookingSuccess}
         />
+      )}
+
+      {showCalendarModal && calendarRoom && (
+        <div className="calendar-modal-overlay">
+          <div className="calendar-modal">
+            <RoomAvailabilityCalendar
+              room={calendarRoom}
+              onSelectDates={(checkIn, checkOut) => {
+                setShowCalendarModal(false);
+                setCalendarRoom(null);
+                // pass dates to booking flow
+                handleRoomSelect(calendarRoom, checkIn, checkOut);
+              }}
+              onClose={() => { setShowCalendarModal(false); setCalendarRoom(null); }}
+            />
+          </div>
+        </div>
       )}
     </div>
   );

@@ -3,15 +3,22 @@
 namespace App\Http\Controllers\Api;
 
 use App\Actions\Reservations\CreateReservation;
+use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
 use App\Enums\ReservationStatus;
 use App\Enums\RoomStatus;
 use App\Events\ReservationStatusChanged;
 use App\Http\Requests\Api\StoreReservationRequest;
 use App\Http\Resources\ReservationResource;
+use App\Models\Payment;
 use App\Models\Reservation;
 use App\Models\Room;
+use App\Models\User;
+use App\Models\Wallet;
+use App\Notifications\RoleAlertNotification;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Notification;
 
 class ReservationController
 {
@@ -103,11 +110,113 @@ class ReservationController
             return response()->json(['message' => 'Not found'], 404);
         }
 
-        $previousStatus = $reservation->status->value;
-        $reservation->update(['status' => ReservationStatus::Confirmed]);
-        ReservationStatusChanged::dispatch($reservation, $previousStatus);
+        if ($reservation->status !== ReservationStatus::Pending) {
+            return response()->json(['message' => 'Only pending reservations can be accepted.'], 422);
+        }
+
+        $deductedAmount = 0.0;
+        $walletBalanceAfterDeduction = null;
+
+        DB::transaction(function () use (&$reservation, &$deductedAmount, &$walletBalanceAfterDeduction): void {
+            $reservation = Reservation::with(['guest', 'room.roomType', 'promotion', 'payments'])
+                ->lockForUpdate()
+                ->findOrFail($reservation->id);
+
+            $balanceDue = $this->calculateOutstandingBalance($reservation);
+            $wallet = Wallet::firstOrCreate(['user_id' => $reservation->guest_id], ['balance' => 0]);
+
+            if ($balanceDue > 0 && (float) $wallet->balance > 0) {
+                $deductedAmount = round(min((float) $wallet->balance, $balanceDue), 2);
+
+                if ($deductedAmount > 0) {
+                    $wallet->balance = round((float) $wallet->balance - $deductedAmount, 2);
+                    $wallet->save();
+
+                    Payment::create([
+                        'reservation_id' => $reservation->id,
+                        'amount' => $deductedAmount,
+                        'payment_method' => PaymentMethod::EWallet,
+                        'status' => PaymentStatus::Completed,
+                        'transaction_id' => 'WALLET-'.str()->upper(str()->random(12)),
+                        'payment_details' => [
+                            'source' => 'wallet_auto_deduction_on_accept',
+                            'balance_due_before' => $balanceDue,
+                        ],
+                        'paid_at' => now(),
+                    ]);
+                }
+            }
+
+            $walletBalanceAfterDeduction = round((float) $wallet->balance, 2);
+
+            $previousStatus = $reservation->status->value;
+            $reservation->update(['status' => ReservationStatus::Confirmed]);
+            ReservationStatusChanged::dispatch($reservation, $previousStatus);
+
+            $reservation->load(['guest', 'room.roomType', 'promotion', 'payments']);
+        });
+
+        $this->notifyReservationAccepted($reservation, $request->user(), $deductedAmount, $walletBalanceAfterDeduction);
 
         return response()->json(new ReservationResource($this->decorateFinancials($reservation)));
+    }
+
+    private function calculateOutstandingBalance(Reservation $reservation): float
+    {
+        $storedTotal = (float) ($reservation->total_price ?? 0);
+        $calculatedTotal = (float) ($reservation->calculatePrice()['total_price'] ?? 0);
+        $effectiveTotal = $storedTotal > 0 ? $storedTotal : $calculatedTotal;
+
+        $paidAmount = (float) $reservation->payments()
+            ->where('status', PaymentStatus::Completed)
+            ->sum('amount');
+
+        return round(max(0, $effectiveTotal - $paidAmount), 2);
+    }
+
+    private function notifyReservationAccepted(Reservation $reservation, User $actingAdmin, float $deductedAmount, ?float $walletBalanceAfterDeduction): void
+    {
+        $guest = $reservation->guest;
+        $roomNumber = $reservation->room?->room_number ?? $reservation->room_id;
+        $walletAfter = $walletBalanceAfterDeduction ?? 0;
+
+        $guest->notify(new RoleAlertNotification(
+            title: 'Booking Accepted',
+            message: sprintf(
+                'Your reservation for Room %s was accepted. Wallet deducted: $%.2f. Remaining balance: $%.2f.',
+                $roomNumber,
+                $deductedAmount,
+                $walletAfter,
+            ),
+            type: 'reservation_accepted',
+            meta: [
+                'reservation_id' => $reservation->id,
+                'wallet_deducted' => $deductedAmount,
+                'wallet_balance' => $walletAfter,
+            ],
+        ));
+
+        $adminNotification = new RoleAlertNotification(
+            title: 'Reservation Accepted',
+            message: sprintf(
+                '%s accepted reservation #%d. Wallet deducted from guest: $%.2f.',
+                $actingAdmin->name,
+                $reservation->id,
+                $deductedAmount,
+            ),
+            type: 'reservation_accepted_admin',
+            meta: [
+                'reservation_id' => $reservation->id,
+                'guest_id' => $reservation->guest_id,
+                'wallet_deducted' => $deductedAmount,
+            ],
+        );
+
+        $adminUsers = User::query()->where('role', 'admin')->get();
+
+        if ($adminUsers->isNotEmpty()) {
+            Notification::send($adminUsers, $adminNotification);
+        }
     }
 
     public function decline(int $id, Request $request)

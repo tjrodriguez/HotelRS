@@ -54,6 +54,27 @@ export default function ReservationsManagement() {
     return map;
   };
 
+  // Build a map of check-in, check-out, and cancelled dates for highlighting
+  const buildCheckInOutDates = (items) => {
+    const rows = Array.isArray(items) ? items : items?.data || [];
+    const checkIns = {};
+    const checkOuts = {};
+    const cancelled = {};
+    rows.forEach((r) => {
+      if (r.status === 'cancelled') {
+        const cancelledKey = new Date(r.check_in_date).toISOString().slice(0, 10);
+        cancelled[cancelledKey] = (cancelled[cancelledKey] || 0) + 1;
+      } else {
+        const checkInKey = new Date(r.check_in_date).toISOString().slice(0, 10);
+        const checkOutKey = new Date(r.check_out_date).toISOString().slice(0, 10);
+        checkIns[checkInKey] = (checkIns[checkInKey] || 0) + 1;
+        checkOuts[checkOutKey] = (checkOuts[checkOutKey] || 0) + 1;
+      }
+    });
+    return { checkIns, checkOuts, cancelled };
+  };
+
+  const { checkIns, checkOuts, cancelled } = buildCheckInOutDates(reservations);
   const reservationsByDate = buildDateMap(reservations);
 
   const firstDayOfMonth = (d) => new Date(d.getFullYear(), d.getMonth(), 1);
@@ -61,17 +82,58 @@ export default function ReservationsManagement() {
 
   const goMonth = (offset) => setCurrentMonth((m) => new Date(m.getFullYear(), m.getMonth() + offset, 1));
 
-  const getCalendarDays = (monthDate) => {
-    const start = firstDayOfMonth(monthDate);
-    const end = lastDayOfMonth(monthDate);
-    const startWeekday = start.getDay(); // 0..6
+  // Generate calendar days for month view (6 rows x 7 columns with padding)
+  const getCalendarDays = () => {
+    const year = currentMonth.getFullYear();
+    const month = currentMonth.getMonth();
+    
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const daysInMonth = lastDay.getDate();
+    const startingDayOfWeek = firstDay.getDay(); // 0 = Sunday
+    
     const days = [];
-    // previous month's tail
-    for (let i = 0; i < startWeekday; i++) days.push(null);
-    for (let d = 1; d <= end.getDate(); d++) days.push(new Date(monthDate.getFullYear(), monthDate.getMonth(), d));
-    // ensure full weeks (multiple of 7)
-    while (days.length % 7 !== 0) days.push(null);
+    
+    // Add padding from previous month
+    const prevMonthLastDay = new Date(year, month, 0).getDate();
+    for (let i = startingDayOfWeek - 1; i >= 0; i--) {
+      days.push({
+        date: prevMonthLastDay - i,
+        isCurrentMonth: false,
+        fullDate: new Date(year, month - 1, prevMonthLastDay - i)
+      });
+    }
+    
+    // Add days of current month
+    for (let i = 1; i <= daysInMonth; i++) {
+      days.push({
+        date: i,
+        isCurrentMonth: true,
+        fullDate: new Date(year, month, i)
+      });
+    }
+    
+    // Add padding from next month (6 rows = 42 total cells)
+    const remainingDays = 42 - days.length;
+    for (let i = 1; i <= remainingDays; i++) {
+      days.push({
+        date: i,
+        isCurrentMonth: false,
+        fullDate: new Date(year, month + 1, i)
+      });
+    }
+    
     return days;
+  };
+
+  // Check if a date has check-in, check-out, or cancelled reservations
+  const hasCheckInOut = (date) => {
+    const dateStr = date.toISOString().slice(0, 10);
+    return {
+      hasCheckIn: !!checkIns[dateStr],
+      hasCheckOut: !!checkOuts[dateStr],
+      hasCancelled: !!cancelled[dateStr]
+    };
   };
 
   const formatMonthTitle = (d) => d.toLocaleString('default', { month: 'long', year: 'numeric' });
@@ -105,12 +167,13 @@ export default function ReservationsManagement() {
   };
 
   const handleDelete = async (reservation) => {
-    if (confirm(`Are you sure you want to delete this reservation?`)) {
+    if (confirm(`Cancel this reservation?`)) {
       try {
-        await apiClient.delete(`/reservations/${reservation.id}`);
-        setReservations((previous) => previous.filter((r) => r.id !== reservation.id));
+        const updatedReservation = await apiClient.put(`/reservations/${reservation.id}/cancel`, {});
+        setReservations((previous) => previous.map((r) => (r.id === updatedReservation.id ? updatedReservation : r)));
       } catch (error) {
-        console.error('Error deleting reservation:', error);
+        console.error('Error cancelling reservation:', error);
+        alert('Could not cancel this reservation.');
       }
     }
   };
@@ -293,44 +356,64 @@ export default function ReservationsManagement() {
             <div className="calendar-title">{formatMonthTitle(currentMonth)}</div>
           </div>
           <div className="calendar-grid">
-            {['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map((d, i) => (
-              <div key={d} className={`calendar-weekday ${i === 0 || i === 6 ? 'weekend' : ''}`}>{d}</div>
-            ))}
-            {getCalendarDays(currentMonth).map((day, idx) => {
-              if (!day) {
-                // Calculate what day of week this empty cell represents
-                const dayOfWeek = idx % 7;
-                const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
-                return <div key={idx} className={`calendar-day empty ${isWeekend ? 'weekend' : ''}`} />;
-              }
-              const key = day.toISOString().slice(0,10);
-              const dayReservations = reservationsByDate[key] || [];
-              const hasReservations = dayReservations.length > 0;
-              const isToday = key === new Date().toISOString().slice(0,10);
-              const isSelected = selectedDate === key;
-              const isWeekend = day.getDay() === 0 || day.getDay() === 6;
-              const isOtherMonth = day.getMonth() !== currentMonth.getMonth();
-
-              const classes = [
-                'calendar-day',
-                hasReservations ? 'reserved' : '',
-                isToday ? 'today' : '',
-                isSelected ? 'selected' : '',
-                isWeekend ? 'weekend' : '',
-                isOtherMonth ? 'other-month' : ''
-              ].filter(Boolean).join(' ');
-
-              return (
-                <div key={idx} className={classes} onClick={() => setSelectedDate(key)}>
-                  <span className="date-num">{day.getDate()}</span>
-                  {hasReservations && (
-                    <span className="reservation-count">{dayReservations.length}</span>
-                  )}
-                </div>
-              );
-            })}
+            <div className="calendar-weekday-headers">
+              {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+                <div key={day} className="weekday-header">{day}</div>
+              ))}
+            </div>
+            <div className="calendar-days">
+              {getCalendarDays().map((day, idx) => {
+                const { hasCheckIn, hasCheckOut, hasCancelled } = hasCheckInOut(day.fullDate);
+                const isToday = day.isCurrentMonth && day.fullDate.toDateString() === new Date().toDateString();
+                const dateStr = day.fullDate.toISOString().slice(0, 10);
+                
+                let highlightClass = '';
+                if (hasCancelled) highlightClass = 'cancelled';
+                else if (hasCheckIn && hasCheckOut) highlightClass = 'both-events';
+                else if (hasCheckIn) highlightClass = 'checkin';
+                else if (hasCheckOut) highlightClass = 'checkout';
+                
+                return (
+                  <div
+                    key={idx}
+                    className={`calendar-day ${day.isCurrentMonth ? '' : 'other-month'} ${isToday ? 'today' : ''} ${highlightClass}`}
+                    onClick={() => day.isCurrentMonth && setSelectedDate(dateStr)}
+                  >
+                    <div className="day-number">{day.date}</div>
+                    {day.isCurrentMonth && (hasCheckIn || hasCheckOut || hasCancelled) && (
+                      <div className="check-indicators">
+                        {hasCheckIn && <div className="indicator checkin" title="Check-in">↓</div>}
+                        {hasCheckOut && <div className="indicator checkout" title="Check-out">↑</div>}
+                        {hasCancelled && <div className="indicator cancelled-badge" title="Cancelled">✕</div>}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </div>
+          <div className="calendar-legend">
+            <h3 className="legend-title">Legend</h3>
+            <div className="legend-items">
+              <div className="legend-item">
+                <div className="legend-indicator checkin">↓</div>
+                <span>Check-in</span>
+              </div>
+              <div className="legend-item">
+                <div className="legend-indicator checkout">↑</div>
+                <span>Check-out</span>
+              </div>
+              <div className="legend-item">
+                <div className="legend-indicator cancelled">✕</div>
+                <span>Cancelled</span>
+              </div>
+              <div className="legend-item">
+                <div className="legend-indicator today">●</div>
+                <span>Today</span>
+              </div>
+            </div>
+          </div>
         <div className="reservation-day-list">
           <div className="list-header">
             <h3>{selectedDate ? formatSelectedDate(selectedDate) : 'Select a Date'}</h3>
@@ -379,7 +462,7 @@ export default function ReservationsManagement() {
         data={reservations}
         isLoading={isLoading}
         onEdit={handleEdit}
-        onDelete={handleDelete}
+        onDelete={handleDeleteClick}
         renderActions={(row) => (
           <div className="table-action-group">
             {row.status === 'pending' && (
@@ -457,3 +540,11 @@ export default function ReservationsManagement() {
     </div>
   );
 }
+
+  const handleDeleteClick = (reservation) => {
+    const message = `Are you sure you want to cancel this reservation?\n\nGuest: ${reservation.guest?.name || 'Guest #' + reservation.guest_id}\nRoom: ${reservation.room?.room_number || reservation.room_id}\nDate: ${new Date(reservation.check_in_date).toLocaleDateString()} - ${new Date(reservation.check_out_date).toLocaleDateString()}\n\nThis action cannot be undone.`;
+    
+    if (confirm(message)) {
+      handleDelete(reservation);
+    }
+  };

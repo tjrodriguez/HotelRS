@@ -226,6 +226,28 @@ export class ApiClient {
     return this.put(`/payments/${id}/refund`, {});
   }
 
+  // Wallet
+  getWallet() {
+    return this.get('/wallet');
+  }
+
+  topUpWallet(amount) {
+    return this.post('/wallet/top-up', { amount });
+  }
+
+  // Notifications
+  getNotifications() {
+    return this.get('/notifications');
+  }
+
+  markNotificationAsRead(id) {
+    return this.put(`/notifications/${id}/read`, {});
+  }
+
+  markAllNotificationsAsRead() {
+    return this.put('/notifications/read-all', {});
+  }
+
   // Users
   getUsers(params = {}) {
     const query = new URLSearchParams(params).toString();

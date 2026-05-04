@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { apiClient } from '../../services/apiClient';
+import apiClient from '../../services/apiClient';
 import DataTable from './DataTable';
 import Modal from '../Modal';
 
@@ -8,6 +8,7 @@ export default function RoomTypesManagement() {
   const [isLoading, setIsLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [editingType, setEditingType] = useState(null);
+  const [error, setError] = useState(null);
   const [formData, setFormData] = useState({ name: '', description: '' });
 
   useEffect(() => {
@@ -16,11 +17,13 @@ export default function RoomTypesManagement() {
 
   const fetchRoomTypes = async () => {
     setIsLoading(true);
+    setError(null);
     try {
       const data = await apiClient.getRoomTypes();
       setRoomTypes(Array.isArray(data) ? data : data.data || []);
     } catch (error) {
       console.error('Error fetching room types:', error);
+      setError('Failed to load room types. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -64,6 +67,7 @@ export default function RoomTypesManagement() {
 
   return (
     <div className="management-container">
+      {error && <div className="error-alert">{error}</div>}
       <h2>Room Types Management</h2>
       <DataTable columns={columns} data={roomTypes} isLoading={isLoading} onEdit={handleEdit} onDelete={handleDelete} />
 

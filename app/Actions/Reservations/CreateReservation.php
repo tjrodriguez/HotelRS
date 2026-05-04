@@ -2,6 +2,7 @@
 
 namespace App\Actions\Reservations;
 
+use App\Models\Payment;
 use App\Models\Promotion;
 use App\Models\Reservation;
 use App\Models\Room;
@@ -58,6 +59,28 @@ class CreateReservation
 
             if ($promotion) {
                 $promotion->increment('current_uses');
+            }
+
+            // If the guest requested to use wallet, attempt deduction and create payment
+            if (! empty($data['use_wallet'])) {
+                $wallet = $guest->wallet;
+                if (! $wallet || $wallet->balance < $pricing['total_price']) {
+                    throw ValidationException::withMessages([
+                        'wallet' => ['Insufficient wallet balance.'],
+                    ]);
+                }
+
+                $wallet->balance = $wallet->balance - $pricing['total_price'];
+                $wallet->save();
+
+                Payment::create([
+                    'user_id' => $guest->id,
+                    'reservation_id' => $reservation->id,
+                    'amount' => $pricing['total_price'],
+                    'method' => 'e_wallet',
+                    'status' => 'completed',
+                    'paid_at' => now(),
+                ]);
             }
 
             return $reservation->load(['guest', 'room.roomType', 'promotion', 'payments']);

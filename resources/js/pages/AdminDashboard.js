@@ -11,6 +11,7 @@ import ReservationsManagement from '../components/admin/ReservationsManagement';
 import PaymentsManagement from '../components/admin/PaymentsManagement';
 import PromotionsManagement from '../components/admin/PromotionsManagement';
 import ActivityLogsManagement from '../components/admin/ActivityLogsManagement';
+import Notifications from '../components/Notifications';
 
 export default function AdminDashboard() {
   const { user } = useAuth();
@@ -45,12 +46,14 @@ export default function AdminDashboard() {
   return (
     <>
       <div className="admin-header">
-        <div>
+        <div className="admin-heading">
+          <span className="admin-eyebrow">Operations Center</span>
           <h1>{activeTab === 'dashboard' ? 'Operations Overview' : 'Operations'}</h1>
           <p className="header-subtitle">Front office and room management control center</p>
         </div>
         <div className="admin-user-info">
           <span className="admin-badge">{user?.role || 'Administrator'}</span>
+          <Notifications userType="admin" />
           <span className="header-date">{today}</span>
         </div>
       </div>

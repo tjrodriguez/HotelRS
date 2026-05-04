@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { apiClient } from '../../services/apiClient';
 import Modal from '../Modal';
 import PricingBreakdown from './PricingBreakdown';
@@ -84,6 +84,8 @@ export default function BookingModal({ room, checkInDate, checkOutDate, onClose,
   const [fieldErrors, setFieldErrors] = useState({});
   const [promotion, setPromotion] = useState(null);
   const [isValidatingPromo, setIsValidatingPromo] = useState(false);
+  const [walletBalance, setWalletBalance] = useState(null);
+  const [useWallet, setUseWallet] = useState(false);
 
   const today = tomorrow;
 
@@ -110,6 +112,42 @@ export default function BookingModal({ room, checkInDate, checkOutDate, onClose,
       totalPrice: parseFloat(totalPrice.toFixed(2)),
     };
   }, [nights, promotion, room]);
+
+  const walletShortfall = useMemo(() => {
+    if (walletBalance === null) {
+      return null;
+    }
+
+    return Math.max(0, parseFloat((pricing.totalPrice - walletBalance).toFixed(2)));
+  }, [pricing.totalPrice, walletBalance]);
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const data = await apiClient.getWallet();
+        if (mounted) setWalletBalance(parseFloat(data.balance));
+      } catch (e) {
+        // ignore - wallet may be unauthenticated
+      }
+    })();
+
+    return () => { mounted = false; };
+  }, []);
+
+  useEffect(() => {
+    const handleWalletUpdate = (event) => {
+      if (event?.detail?.balance !== undefined) {
+        setWalletBalance(parseFloat(event.detail.balance));
+      }
+    };
+
+    window.addEventListener('wallet:updated', handleWalletUpdate);
+
+    return () => {
+      window.removeEventListener('wallet:updated', handleWalletUpdate);
+    };
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -189,12 +227,21 @@ export default function BookingModal({ room, checkInDate, checkOutDate, onClose,
     setFieldErrors({});
 
     try {
+      if (useWallet && walletBalance !== null && walletBalance < pricing.totalPrice) {
+        const msg = 'Insufficient wallet balance for this booking.';
+        setError(msg);
+        return;
+      }
       const payload = {
         room_id: room.id,
-        check_in_date: formData.checkInDate,
-        check_out_date: formData.checkOutDate,
+        check_in: formData.checkInDate,
+        check_out: formData.checkOutDate,
         number_of_guests: parseInt(formData.numberOfGuests, 10),
       };
+
+      if (useWallet) {
+        payload.use_wallet = true;
+      }
 
       if (formData.promotionCode?.trim()) {
         payload.promotion_code = formData.promotionCode.trim();
@@ -379,11 +426,11 @@ export default function BookingModal({ room, checkInDate, checkOutDate, onClose,
                 disabled={isSubmitting}
                 className="guests-input"
               >
-                {[...Array(room.room_type?.capacity || 1)].map((_, i) => (
-                  <option key={i + 1} value={i + 1}>
-                    {i + 1} {i === 0 ? 'guest' : 'guests'}
-                  </option>
-                ))}
+                        {[...Array(Math.min(8, room.room_type?.capacity || 1))].map((_, i) => (
+                          <option key={i + 1} value={i + 1}>
+                            Up to {i + 1} {i === 0 ? 'guest' : 'guests'}
+                          </option>
+                        ))}
               </select>
               {fieldErrors.number_of_guests && (
                 <span className="field-error-text">{fieldErrors.number_of_guests}</span>
@@ -391,6 +438,64 @@ export default function BookingModal({ room, checkInDate, checkOutDate, onClose,
             </div>
           </div>
         </div>
+
+                <div className="booking-section">
+                  <h3 className="section-title">Payment</h3>
+                  <div className="wallet-payment-panel">
+                    <div className="wallet-payment-panel__header">
+                      <div>
+                        <div className="wallet-payment-panel__label">Wallet balance</div>
+                        <div className="wallet-payment-panel__amount">
+                          {walletBalance === null ? '—' : `$${walletBalance.toFixed(2)}`}
+                        </div>
+                      </div>
+
+                      <label className="wallet-payment-panel__toggle">
+                        <input
+                          type="checkbox"
+                          checked={useWallet}
+                          onChange={(e) => setUseWallet(e.target.checked)}
+                          disabled={isSubmitting || walletBalance === null}
+                        />
+                        <span>Pay with wallet</span>
+                      </label>
+                    </div>
+
+                    <div className="wallet-payment-panel__meta">
+                      <span>Required: ${pricing.totalPrice.toFixed(2)}</span>
+                      {walletShortfall !== null && walletShortfall > 0 && useWallet && (
+                        <span className="wallet-payment-panel__warning">
+                          Need ${walletShortfall.toFixed(2)} more to confirm.
+                        </span>
+                      )}
+                    </div>
+
+                    {walletBalance !== null && walletBalance <= 0 && (
+                      <div className="wallet-payment-panel__empty">
+                        Your wallet is empty. Top up using GCash, bank transfer, Maya, or cash deposit.
+                      </div>
+                    )}
+
+                    {useWallet && walletShortfall !== null && walletShortfall > 0 && (
+                      <div className="wallet-payment-panel__cta">
+                        <button
+                          type="button"
+                          className="btn btn-primary"
+                          onClick={() => {
+                            window.dispatchEvent(new CustomEvent('wallet:openTopUp', {
+                              detail: { suggestedAmount: walletShortfall, method: 'gcash' },
+                            }));
+                          }}
+                        >
+                          Top up now
+                        </button>
+                        <span className="wallet-payment-panel__hint">
+                          Suggested top-up: ${walletShortfall.toFixed(2)}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
 
         {nights > 0 && (
           <div className="booking-section pricing-section">
@@ -479,8 +584,8 @@ export default function BookingModal({ room, checkInDate, checkOutDate, onClose,
           <button 
             type="submit" 
             className="btn-confirm" 
-            disabled={isSubmitting || nights < 1}
-            title={nights < 1 ? "Please select valid dates" : "Complete your reservation"}
+            disabled={isSubmitting || nights < 1 || (useWallet && walletShortfall !== null && walletShortfall > 0)}
+            title={nights < 1 ? "Please select valid dates" : (useWallet && walletShortfall !== null && walletShortfall > 0 ? "Top up your wallet first" : "Complete your reservation")}
             aria-label={`Confirm booking for $${pricing.totalPrice}`}
           >
             {isSubmitting ? (
