@@ -98,12 +98,8 @@ export default function BookingModal({ room, checkInDate, checkOutDate, onClose,
     const basePrice = (room.room_type?.price_per_night || room.price_per_night || 0) * nights;
     let discountAmount = 0;
 
-    if (promotion) {
-      if (promotion.discount_percentage) {
-        discountAmount = basePrice * (promotion.discount_percentage / 100);
-      } else if (promotion.discount_amount) {
-        discountAmount = promotion.discount_amount;
-      }
+    if (promotion?.discount_percentage) {
+      discountAmount = basePrice * (promotion.discount_percentage / 100);
     }
 
     const totalPrice = Math.max(0, basePrice - discountAmount);
@@ -448,7 +444,7 @@ export default function BookingModal({ room, checkInDate, checkOutDate, onClose,
             {promotion && (
               <div className="promo-success" role="status">
                 <span className="promo-icon">{CHECK_ICON}</span>
-                <span className="promo-text">{promotion.description} ({promotion.discount_percentage ? `${promotion.discount_percentage}% off` : `$${promotion.discount_amount} off`})</span>
+                <span className="promo-text">{promotion.description} ({promotion.discount_percentage}% off)</span>
               </div>
             )}
           </div>

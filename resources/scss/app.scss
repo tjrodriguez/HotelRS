@@ -40,8 +40,3 @@
 @use 'components/pages/admin-dashboard';
 @use 'components/pages/guest-booking';
 
-// Guest-specific overrides
-:root {
-  --primary: #14b8a6;
-  --primary-hover: #0d9488;
-}

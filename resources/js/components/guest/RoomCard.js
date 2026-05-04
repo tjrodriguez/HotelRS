@@ -36,15 +36,23 @@ export default function RoomCard({ room, onBook }) {
   const pricePerNight = parseFloat(room.room_type?.price_per_night || room.price_per_night || 0);
   const roomTypeName = room.room_type?.name || 'Standard';
   const capacity = room.room_type?.capacity || 1;
-  const status = room.availability_status || room.room_status?.status_name || 'Available';
-  
+  const floor = room.floor ?? null;
+  const status = room.availability_status || room.room_status?.status_name || room.status || 'Available';
+
+  // Normalize amenities (DB stores as JSON string or parsed array)
+  let amenities = room.amenities || [];
+  if (typeof amenities === 'string') {
+    try { amenities = JSON.parse(amenities); } catch { amenities = []; }
+  }
+  if (!Array.isArray(amenities)) { amenities = []; }
+
   // Normalized status key for config lookup
   const statusKey = String(status).toLowerCase().trim().replace(/\s+/g, '-');
   const statusConfig = STATUS_CONFIG[statusKey] || DEFAULT_STATUS_CONFIG;
   const isAvailable = room.is_available_for_booking ?? (statusKey === 'available' || statusKey === 'vacant');
   const isOccupied = statusKey === 'occupied';
   const isReserved = statusKey === 'reserved';
-  
+
   // Format price with 2 decimal places
   const formattedPrice = `$${pricePerNight.toFixed(2)}`;
 
@@ -72,37 +80,10 @@ export default function RoomCard({ room, onBook }) {
           <span className="room-type">{roomTypeName}</span>
         </div>
         <span className={`status-badge status-${statusKey}`} title={`Status: ${statusConfig.label}`}>
-          <span
-            className="dot"
-            aria-hidden="true"
-            style={{
-              display: 'inline-block',
-              width: '10px',
-              height: '10px',
-              borderRadius: '50%',
-              backgroundColor: statusConfig.color,
-              boxShadow: `0 0 0 2px rgba(255,255,255,0.9), inset 0 0 0 1px ${statusConfig.color}20`,
-              flexShrink: 0,
-            }}
-          />
-          <span 
-            className="label" 
-            style={{ 
-              color: statusConfig.textColor,
-              fontWeight: 600,
-              fontSize: '0.875rem',
-            }}
-          >
-            {statusConfig.label}
-          </span>
+          <span className="dot" aria-hidden="true" />
+          <span className="label">{statusConfig.label}</span>
         </span>
       </div>
-
-      {(isOccupied || isReserved) && (
-        <div className="room-availability-note unavailable">
-          {isOccupied ? 'Occupied room — currently unavailable' : 'Reserved room — awaiting confirmation'}
-        </div>
-      )}
 
       <div className="room-card-details">
         <div className="detail-item">
@@ -111,6 +92,16 @@ export default function RoomCard({ room, onBook }) {
           </span>
           <span className="text">Up to {capacity} {capacity === 1 ? 'guest' : 'guests'}</span>
         </div>
+        {floor !== null && (
+          <div className="detail-item">
+            <span className="icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M3 21h18M5 21V7l8-4 8 4v14M9 21v-6h6v6" />
+              </svg>
+            </span>
+            <span className="text">Floor {floor}</span>
+          </div>
+        )}
         <div className="detail-item">
           <span className="icon" aria-hidden="true">
             {PRICE_ICON}
@@ -125,11 +116,11 @@ export default function RoomCard({ room, onBook }) {
         </div>
       )}
 
-      {room.amenities && Array.isArray(room.amenities) && room.amenities.length > 0 && (
+      {amenities.length > 0 && (
         <div className="room-amenities">
           <p className="amenities-label">Amenities</p>
           <div className="amenities-list">
-            {room.amenities.map((amenity, idx) => (
+            {amenities.map((amenity, idx) => (
               <span key={`${amenity}-${idx}`} className="amenity-tag">
                 {amenity}
               </span>

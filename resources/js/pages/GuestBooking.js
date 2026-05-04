@@ -1,11 +1,13 @@
-import React, { useState, useContext } from 'react';
-import { AuthContext } from '../contexts/AuthContext';
+import React from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import RoomBrowser from '../components/guest/RoomBrowser';
 import BookingHistory from '../components/guest/BookingHistory';
 
 export default function GuestBooking() {
-  const { logout, user } = useContext(AuthContext);
-  const [activeTab, setActiveTab] = useState('browse');
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  const activeTab = location.pathname === '/my-reservations' ? 'history' : 'browse';
 
   const Icon = ({ name }) => {
     const iconMap = {
@@ -35,36 +37,17 @@ export default function GuestBooking() {
 
   return (
     <div className="guest-booking">
-      <header className="guest-header">
-        <div className="header-content">
-          <div className="header-brand">
-            <span className="brand-mark" aria-hidden>
-              <Icon name="star" />
-            </span>
-            <div>
-              <h1>Luxe Stays Guest Portal</h1>
-              <p>Book rooms, track reservations, and manage your stay</p>
-            </div>
-          </div>
-          <div className="header-right">
-            <span className="welcome">Welcome, {user?.name || 'Guest'}</span>
-            <button onClick={logout} className="btn btn-secondary">Logout</button>
-          </div>
-        </div>
-
-      </header>
-
       <div className="guest-tabs">
-        <button 
+        <button
           className={`tab-btn ${activeTab === 'browse' ? 'active' : ''}`}
-          onClick={() => setActiveTab('browse')}
+          onClick={() => navigate('/book')}
         >
           <span className="tab-icon" aria-hidden><Icon name="browse" /></span>
           Browse & Book
         </button>
-        <button 
+        <button
           className={`tab-btn ${activeTab === 'history' ? 'active' : ''}`}
-          onClick={() => setActiveTab('history')}
+          onClick={() => navigate('/my-reservations')}
         >
           <span className="tab-icon" aria-hidden><Icon name="bookings" /></span>
           My Bookings

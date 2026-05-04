@@ -1,26 +1,28 @@
 import React from 'react';
-import { Outlet, Link, useNavigate } from 'react-router-dom';
+import { Outlet } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 
 export default function GuestLayout() {
-  const { logout } = useAuth();
-  const navigate = useNavigate();
-
-  const handleLogout = async () => {
-    await logout();
-    navigate('/login');
-  };
+  const { logout, user } = useAuth();
 
   return (
     <div className="layout layout--guest">
       <header className="header" role="banner">
         <nav className="header__nav" aria-label="Guest navigation">
-          <Link to="/book" className="header__link">Book a Room</Link>
-          <Link to="/my-reservations" className="header__link">My Reservations</Link>
-          <Link to="/my-payments" className="header__link">My Payments</Link>
-          <button className="header__logout" onClick={handleLogout} type="button">
-            Logout
-          </button>
+          <div className="header__brand">
+            <span className="brand-mark" aria-hidden>
+              <svg viewBox="0 0 24 24" fill="none" stroke="#d97706" strokeWidth="1.6" strokeLinejoin="round">
+                <path d="M12 3l2.8 5.7 6.2.9-4.5 4.4 1 6.2L12 17.3 6.5 20.2l1-6.2L3 9.6l6.2-.9L12 3z" />
+              </svg>
+            </span>
+            <span className="brand-name">Luxe Stays</span>
+          </div>
+          <div className="header__actions">
+            <span className="header__welcome">Welcome, {user?.name || 'Guest'}</span>
+            <button className="header__logout" onClick={logout} type="button">
+              Logout
+            </button>
+          </div>
         </nav>
       </header>
       <main className="main-content">
