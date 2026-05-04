@@ -1,12 +1,13 @@
 <?php
 
+use App\Http\Controllers\Api\ActivityLogController;
 use App\Http\Controllers\Api\AuthController;
-use App\Http\Controllers\Api\RoomTypeController;
-use App\Http\Controllers\Api\RoomController;
-use App\Http\Controllers\Api\ReservationController;
+use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\PromotionController;
-use App\Http\Controllers\Api\ActivityLogController;
+use App\Http\Controllers\Api\ReservationController;
+use App\Http\Controllers\Api\RoomController;
+use App\Http\Controllers\Api\RoomTypeController;
 use App\Http\Controllers\Api\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -21,20 +22,29 @@ Route::get('/status', function () {
 });
 
 // Public auth routes
-Route::post('/auth/register', [AuthController::class, 'register']);
-Route::post('/auth/login', [AuthController::class, 'login']);
+Route::middleware('throttle:5,1')->group(function () {
+    Route::post('/auth/register', [AuthController::class, 'register']);
+    Route::post('/auth/login', [AuthController::class, 'login']);
+});
 
 // Protected routes
-Route::middleware('auth:sanctum')->group(function () {
+Route::middleware(['auth:sanctum', 'throttle:20,1'])->group(function () {
     // Auth
     Route::post('/auth/logout', [AuthController::class, 'logout']);
     Route::get('/auth/me', [AuthController::class, 'me']);
+    Route::put('/auth/me', [AuthController::class, 'updateProfile']);
+    Route::put('/auth/password', [AuthController::class, 'changePassword']);
+
+    // Password reset (public)
+    Route::post('/auth/forgot-password', [AuthController::class, 'forgotPassword']);
+    Route::post('/auth/reset-password', [AuthController::class, 'resetPassword']);
 
     // Public endpoints (accessible to all authenticated users)
     Route::get('/rooms', [RoomController::class, 'index']);
     Route::get('/rooms/{id}', [RoomController::class, 'show']);
     Route::get('/rooms/{id}/reservations', [ReservationController::class, 'getRoomReservations']);
     Route::post('/rooms/check-availability', [RoomController::class, 'checkAvailability']);
+    Route::get('/rooms/availability-calendar', [RoomController::class, 'availabilityCalendar']);
     Route::get('/room-types', [RoomTypeController::class, 'index']);
     Route::get('/room-types/{id}', [RoomTypeController::class, 'show']);
     Route::get('/promotions', [PromotionController::class, 'index']);
@@ -46,6 +56,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/reservations/{id}', [ReservationController::class, 'show']);
     Route::post('/reservations', [ReservationController::class, 'store']);
     Route::put('/reservations/{id}/cancel', [ReservationController::class, 'cancel']);
+    Route::put('/reservations/{id}/check-in', [ReservationController::class, 'checkIn']);
+    Route::put('/reservations/{id}/check-out', [ReservationController::class, 'checkOut']);
 
     // Guest payments
     Route::get('/payments', [PaymentController::class, 'index']);
@@ -54,6 +66,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Admin-only routes
     Route::middleware('admin')->group(function () {
+        // Dashboard
+        Route::get('/dashboard/stats', [DashboardController::class, 'stats']);
+
         // Room Types
         Route::post('/room-types', [RoomTypeController::class, 'store']);
         Route::put('/room-types/{id}', [RoomTypeController::class, 'update']);

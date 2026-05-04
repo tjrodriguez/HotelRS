@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { apiClient } from '../../services/apiClient';
+import { useAuth } from '../../contexts/AuthContext';
 import RoomCard from './RoomCard';
 import BookingModal from './BookingModal';
 
 export default function RoomBrowser({ showHero = true }) {
+  const { token } = useAuth();
   const formatLocalDate = (date) => {
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -45,8 +47,8 @@ export default function RoomBrowser({ showHero = true }) {
   });
 
   useEffect(() => {
-    fetchRooms();
-  }, [filters]);
+    if (token) fetchRooms();
+  }, [filters, token]);
 
   const fetchRooms = async () => {
     setIsLoading(true);

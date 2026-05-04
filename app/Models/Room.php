@@ -53,14 +53,14 @@ class Room extends Model
                             ->where('check_out_date', '>=', $checkOut);
                     });
             })
-            ->whereIn('status', ['confirmed', 'pending'])
+            ->whereIn('status', [ReservationStatus::Confirmed->value, ReservationStatus::Pending->value, ReservationStatus::CheckedIn->value])
             ->exists();
     }
 
     public function refreshDerivedStatus(): void
     {
         $hasActive = $this->reservations()
-            ->whereIn('status', [ReservationStatus::Pending, ReservationStatus::Confirmed])
+            ->whereIn('status', [ReservationStatus::Pending, ReservationStatus::Confirmed, ReservationStatus::CheckedIn])
             ->where('check_in_date', '<=', now())
             ->where('check_out_date', '>=', now())
             ->exists();

@@ -7,6 +7,7 @@ import AdminGuard from './components/guards/AdminGuard';
 import Login from './pages/Login';
 import AdminDashboard from './pages/AdminDashboard';
 import GuestBooking from './pages/GuestBooking';
+import GuestProfile from './pages/GuestProfile';
 
 export default function App() {
   return (
@@ -17,6 +18,7 @@ export default function App() {
         <Route path="/book" element={<GuestBooking />} />
         <Route path="/my-reservations" element={<GuestBooking />} />
         <Route path="/my-payments" element={<GuestBooking />} />
+        <Route path="/profile" element={<GuestProfile />} />
         <Route path="/" element={<GuestBooking />} />
       </Route>
 

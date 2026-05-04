@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Enums\PaymentStatus;
 use App\Enums\ReservationStatus;
+use App\Http\Requests\Api\StorePaymentRequest;
 use App\Http\Resources\PaymentResource;
 use App\Models\Payment;
 use App\Models\Reservation;
@@ -49,13 +50,9 @@ class PaymentController
         return response()->json(new PaymentResource($payment));
     }
 
-    public function store(Request $request)
+    public function store(StorePaymentRequest $request)
     {
-        $validated = $request->validate([
-            'reservation_id' => 'required|exists:reservations,id',
-            'amount' => 'required|numeric|min:0',
-            'payment_method' => 'required|string|in:credit_card,debit_card,bank_transfer,cash',
-        ]);
+        $validated = $request->validated();
 
         $reservation = Reservation::find($validated['reservation_id']);
 
@@ -78,8 +75,8 @@ class PaymentController
             'transaction_id' => 'TXN-'.str()->random(16),
         ]);
 
-        // Update reservation status if full payment is made
-        if ($payment->amount >= $reservation->total_price) {
+        // Update reservation status if full payment (or more) is made
+        if ((float) $reservation->paid_amount >= (float) $reservation->total_price) {
             $reservation->update(['status' => ReservationStatus::Confirmed]);
         }
 
@@ -99,7 +96,6 @@ class PaymentController
         }
 
         $payment->update(['status' => PaymentStatus::Refunded]);
-        $payment->reservation->update(['status' => ReservationStatus::Cancelled]);
 
         return response()->json(new PaymentResource($payment));
     }

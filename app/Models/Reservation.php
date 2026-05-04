@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\PaymentStatus;
 use App\Enums\ReservationStatus;
 use Database\Factories\ReservationFactory;
 use Illuminate\Database\Eloquent\Builder;
@@ -30,6 +31,8 @@ class Reservation extends Model
         'discount_amount',
         'special_requests',
     ];
+
+    protected $appends = ['paid_amount', 'balance_due'];
 
     protected function casts(): array
     {
@@ -106,5 +109,17 @@ class Reservation extends Model
             ReservationStatus::Pending,
             ReservationStatus::Confirmed,
         ]);
+    }
+
+    public function getPaidAmountAttribute(): float
+    {
+        return (float) $this->payments()
+            ->where('status', PaymentStatus::Completed->value)
+            ->sum('amount');
+    }
+
+    public function getBalanceDueAttribute(): float
+    {
+        return max(0, (float) $this->total_price - $this->getPaidAmountAttribute());
     }
 }

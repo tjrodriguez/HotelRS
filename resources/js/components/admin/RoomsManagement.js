@@ -113,8 +113,9 @@ export default function RoomsManagement() {
               >
                 <option value="available">Available</option>
                 <option value="occupied">Occupied</option>
+                <option value="cleaning">Cleaning</option>
                 <option value="maintenance">Maintenance</option>
-                <option value="reserved">Reserved</option>
+                <option value="out_of_order">Out of Order</option>
               </select>
 
               <span className={`status-badge status-${formData.status}`} aria-hidden />

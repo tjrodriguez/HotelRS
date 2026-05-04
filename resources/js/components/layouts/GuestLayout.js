@@ -1,5 +1,5 @@
 import React from 'react';
-import { Outlet } from 'react-router-dom';
+import { Outlet, Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 
 export default function GuestLayout() {
@@ -18,6 +18,7 @@ export default function GuestLayout() {
             <span className="brand-name">Luxe Stays</span>
           </div>
           <div className="header__actions">
+            <Link to="/profile" className="header__link">Profile</Link>
             <span className="header__welcome">Welcome, {user?.name || 'Guest'}</span>
             <button className="header__logout" onClick={logout} type="button">
               Logout

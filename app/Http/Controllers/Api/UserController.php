@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Http\Requests\Api\UpdateUserRequest;
 use App\Http\Resources\UserResource;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -48,7 +49,7 @@ class UserController
         return response()->json(new UserResource($user));
     }
 
-    public function update(Request $request, $id)
+    public function update(UpdateUserRequest $request, $id)
     {
         $user = User::find($id);
 
@@ -56,15 +57,7 @@ class UserController
             return response()->json(['message' => 'Not found'], 404);
         }
 
-        $validated = $request->validate([
-            'name' => 'string|max:255',
-            'email' => 'email|unique:users,email,'.$id,
-            'phone' => 'nullable|string',
-            'address' => 'nullable|string',
-            'role' => 'in:admin,guest',
-        ]);
-
-        $user->update($validated);
+        $user->update($request->validated());
 
         return response()->json(new UserResource($user));
     }

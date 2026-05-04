@@ -1,7 +1,7 @@
 export class ApiClient {
   constructor(baseURL = '/api', token = null) {
     this.baseURL = baseURL;
-    this.token = token;
+    this.token = token ?? (typeof localStorage !== 'undefined' ? localStorage.getItem('token') : null);
     this.onUnauthorized = null;
   }
 
@@ -27,6 +27,14 @@ export class ApiClient {
 
     if (response.status === 204) {
       return null;
+    }
+
+    const contentType = response.headers.get('content-type') || '';
+    if (!contentType.includes('application/json')) {
+      if (response.status === 401 && this.onUnauthorized) {
+        this.onUnauthorized();
+      }
+      throw { status: response.status, message: 'Unexpected non-JSON response from server.' };
     }
 
     const data = await response.json();
@@ -78,6 +86,22 @@ export class ApiClient {
     return this.get('/auth/me');
   }
 
+  updateProfile(data) {
+    return this.put('/auth/me', data);
+  }
+
+  changePassword(data) {
+    return this.put('/auth/password', data);
+  }
+
+  forgotPassword(data) {
+    return this.post('/auth/forgot-password', data);
+  }
+
+  resetPassword(data) {
+    return this.post('/auth/reset-password', data);
+  }
+
   // Rooms
   getRooms(params = {}) {
     const query = new URLSearchParams(params).toString();
@@ -102,6 +126,10 @@ export class ApiClient {
 
   checkAvailability(data) {
     return this.post('/rooms/check-availability', data);
+  }
+
+  getAvailabilityCalendar(params) {
+    return this.get('/rooms/availability-calendar', params);
   }
 
   // Room Types
@@ -172,6 +200,14 @@ export class ApiClient {
     return this.put(`/reservations/${id}/confirm`, {});
   }
 
+  checkInReservation(id) {
+    return this.put(`/reservations/${id}/check-in`, {});
+  }
+
+  checkOutReservation(id) {
+    return this.put(`/reservations/${id}/check-out`, {});
+  }
+
   // Payments
   getPayments(params = {}) {
     const query = new URLSearchParams(params).toString();
@@ -206,6 +242,11 @@ export class ApiClient {
 
   deleteUser(id) {
     return this.delete(`/users/${id}`);
+  }
+
+  // Dashboard
+  getDashboardStats() {
+    return this.get('/dashboard/stats');
   }
 
   // Activity Logs

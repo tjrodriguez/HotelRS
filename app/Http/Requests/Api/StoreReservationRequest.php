@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Api;
 
+use App\Models\Room;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
@@ -36,7 +37,17 @@ class StoreReservationRequest extends FormRequest
             'room_id' => ['required', 'integer', 'exists:rooms,id'],
             'check_in' => ['required', 'date', 'after:today'],
             'check_out' => ['required', 'date', 'after:check_in'],
-            'number_of_guests' => ['required', 'integer', 'min:1'],
+            'number_of_guests' => [
+                'required',
+                'integer',
+                'min:1',
+                function ($attribute, $value, $fail) {
+                    $room = Room::with('roomType')->find($this->input('room_id'));
+                    if ($room && $room->roomType && $value > $room->roomType->capacity) {
+                        $fail('The number of guests exceeds the room capacity of '.$room->roomType->capacity.'.');
+                    }
+                },
+            ],
             'promotion_code' => ['nullable', 'string', 'exists:promotions,code'],
             'special_requests' => ['nullable', 'string'],
         ];

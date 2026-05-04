@@ -259,6 +259,79 @@
   }
 }
 
+// Guest Profile Page Styles
+.guest-profile {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  margin: 0 auto;
+  max-width: 800px;
+  padding: 32px;
+
+  h2 {
+    color: #0f172a;
+    font-size: 24px;
+    font-weight: 700;
+    margin-bottom: 24px;
+  }
+
+  h3 {
+    border-bottom: 1px solid #e2e8f0;
+    color: #1e293b;
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+  }
+}
+
+.profile-section {
+  margin-bottom: 32px;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.form-success {
+  background: #dcfce7;
+  border: 1px solid #86efac;
+  border-radius: 8px;
+  color: #166534;
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 16px;
+  padding: 12px 16px;
+}
+
+.form-error {
+  background: #fee2e2;
+  border: 1px solid #fca5a5;
+  border-radius: 8px;
+  color: #991b1b;
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 16px;
+  padding: 12px 16px;
+}
+
+// Header profile link
+.header__link {
+  color: #475569;
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+  padding: 8px 12px;
+  border-radius: 6px;
+  transition: var(--transition-fast);
+
+  &:hover {
+    background: #f1f5f9;
+    color: #0f172a;
+  }
+}
+
 @media (max-width: 768px) {
   .layout--guest .header__nav {
     flex-direction: column;
@@ -281,5 +354,10 @@
 
   .search-filters {
     grid-template-columns: 1fr;
+  }
+
+  .guest-profile {
+    margin: 0 16px;
+    padding: 20px;
   }
 }

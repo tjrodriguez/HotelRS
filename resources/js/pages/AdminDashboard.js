@@ -1,6 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import apiClient from '../services/apiClient';
+import Loading from '../components/shared/Loading';
+import ErrorDisplay from '../components/shared/ErrorDisplay';
 import UsersManagement from '../components/admin/UsersManagement';
 import RoomsManagement from '../components/admin/RoomsManagement';
 import RoomTypesManagement from '../components/admin/RoomTypesManagement';
@@ -57,25 +60,49 @@ export default function AdminDashboard() {
 }
 
 function DashboardHome({ setActiveTab }) {
-  const weeklyRevenue = [32.4, 28.1, 41.2, 37.8, 44.6, 52.3, 48.2];
-  const weekDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  const { token } = useAuth();
+  const [stats, setStats] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    if (!token) return;
+    apiClient.getDashboardStats()
+      .then((data) => {
+        setStats(data);
+        setLoading(false);
+      })
+      .catch((err) => {
+        setError(err.message || 'Failed to load dashboard data');
+        setLoading(false);
+      });
+  }, [token]);
+
+  if (loading) return <Loading />;
+  if (error) return <ErrorDisplay message={error} />;
+  if (!stats) return null;
+
+  const s = stats.stats;
+  const weekly = stats.weekly_revenue;
+  const activityItems = stats.recent_activity || [];
+  const maxRevenue = Math.max(...weekly.values, 1);
 
   const cards = [
     {
       title: 'Occupancy',
-      value: '73%',
-      note: '22 of 30 rooms',
-      trend: '+4.2%',
-      trendClass: 'success',
+      value: `${s.occupancy_rate}%`,
+      note: `${s.occupied_rooms} of ${s.total_rooms} rooms`,
+      trend: s.occupancy_rate >= 70 ? 'High' : 'Low',
+      trendClass: s.occupancy_rate >= 70 ? 'success' : 'neutral',
       icon: (
         <path d="M3 20V10l9-7 9 7v10M7 20v-6h10v6" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
       ),
     },
     {
       title: 'Revenue Today',
-      value: 'P48,200',
-      note: '+12% vs yesterday',
-      trend: '+12%',
+      value: `P${parseFloat(s.today_revenue).toLocaleString()}`,
+      note: 'Total completed payments',
+      trend: 'Live',
       trendClass: 'success',
       icon: (
         <>
@@ -86,8 +113,8 @@ function DashboardHome({ setActiveTab }) {
     },
     {
       title: 'Check-ins Today',
-      value: '7',
-      note: '3 pending arrival',
+      value: String(s.check_ins_today),
+      note: `${s.check_outs_today} check-outs today`,
       trend: 'On track',
       trendClass: 'neutral',
       icon: (
@@ -99,8 +126,8 @@ function DashboardHome({ setActiveTab }) {
     },
     {
       title: 'Active Promos',
-      value: '4',
-      note: '2 expiring in 48h',
+      value: String(s.active_promotions),
+      note: 'Currently running',
       trend: 'Review',
       trendClass: 'warning',
       icon: (
@@ -109,20 +136,11 @@ function DashboardHome({ setActiveTab }) {
     },
   ];
 
-  const activityItems = [
-    'Reservation #1042 created for Liza Cruz (Room 101)',
-    'Payment of P29,250 received from Ana Reyes (Credit Card)',
-    'Ben Flores checked in - Room 402',
-    'Promo SUMMER10 applied to reservation #1047',
-    'Room 304 status updated to Occupied',
-    'New user created: Ben Flores',
-  ];
-
   const quickActions = [
     { label: 'New Reservation', tab: 'reservations' },
-    { label: 'Check In Guest', tab: 'rooms' },
+    { label: 'Check In Guest', tab: 'reservations' },
     { label: 'Add Promotion', tab: 'promotions' },
-    { label: 'Mark Room Clean', tab: 'rooms' },
+    { label: 'Manage Rooms', tab: 'rooms' },
   ];
 
   return (
@@ -148,13 +166,13 @@ function DashboardHome({ setActiveTab }) {
         <section className="dashboard-panel">
           <h3>Weekly Revenue</h3>
           <div className="revenue-list">
-            {weeklyRevenue.map((amount, index) => (
-              <div className="revenue-item" key={weekDays[index]}>
-                <span className="weekday">{weekDays[index]}</span>
+            {weekly.labels.map((day, index) => (
+              <div className="revenue-item" key={day}>
+                <span className="weekday">{day}</span>
                 <div className="revenue-bar-track">
-                  <span className="revenue-bar" style={{ width: `${(amount / 55) * 100}%` }} />
+                  <span className="revenue-bar" style={{ width: `${(weekly.values[index] / maxRevenue) * 100}%` }} />
                 </div>
-                <span className="amount">P{amount.toFixed(1)}k</span>
+                <span className="amount">P{weekly.values[index].toLocaleString()}</span>
               </div>
             ))}
           </div>
@@ -163,15 +181,19 @@ function DashboardHome({ setActiveTab }) {
         <section className="dashboard-panel">
           <h3>Recent Activity</h3>
           <ul className="activity-list">
-            {activityItems.map((item, index) => (
-              <li key={item}>
-                <span className="dot" />
-                <div>
-                  <p>{item}</p>
-                  <span>{index < 5 ? `${9 - index}:${(14 - index * 7).toString().padStart(2, '0')} AM` : 'Yesterday'}</span>
-                </div>
-              </li>
-            ))}
+            {activityItems.length === 0 ? (
+              <li><p>No recent activity.</p></li>
+            ) : (
+              activityItems.map((item) => (
+                <li key={item.id}>
+                  <span className="dot" />
+                  <div>
+                    <p>{item.action} {item.entity_type} #{item.entity_id}</p>
+                    <span>{new Date(item.created_at).toLocaleTimeString()}</span>
+                  </div>
+                </li>
+              ))
+            )}
           </ul>
         </section>
 

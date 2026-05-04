@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { apiClient } from '../../services/apiClient';
+import { useAuth } from '../../contexts/AuthContext';
 import PricingBreakdown from './PricingBreakdown';
 
 export default function BookingHistory() {
+  const { token } = useAuth();
   const Icon = ({ type }) => {
     const icons = {
       list: <><rect x="4" y="4" width="16" height="16" rx="2" strokeWidth="1.8" /><path d="M8 8h8M8 12h8M8 16h5" strokeWidth="1.8" strokeLinecap="round" /></>,
@@ -29,8 +31,8 @@ export default function BookingHistory() {
   }).length;
 
   useEffect(() => {
-    fetchMyReservations();
-  }, []);
+    if (token) fetchMyReservations();
+  }, [token]);
 
   const fetchMyReservations = async () => {
     setIsLoading(true);
@@ -59,6 +61,32 @@ export default function BookingHistory() {
       } catch (err) {
         alert(`Error: ${err.message || 'Failed to cancel reservation'}`);
       }
+    }
+  };
+
+  const handleCheckIn = async (reservationId) => {
+    try {
+      const data = await apiClient.checkInReservation(reservationId);
+      setReservations((previous) =>
+        previous.map((r) =>
+          r.id === reservationId ? { ...r, checked_in_at: data.checked_in_at, status: data.status || r.status } : r
+        )
+      );
+    } catch (err) {
+      alert(`Error: ${err.message || 'Failed to check in'}`);
+    }
+  };
+
+  const handleCheckOut = async (reservationId) => {
+    try {
+      const data = await apiClient.checkOutReservation(reservationId);
+      setReservations((previous) =>
+        previous.map((r) =>
+          r.id === reservationId ? { ...r, checked_out_at: data.checked_out_at, status: data.status || r.status } : r
+        )
+      );
+    } catch (err) {
+      alert(`Error: ${err.message || 'Failed to check out'}`);
     }
   };
 
@@ -225,8 +253,8 @@ export default function BookingHistory() {
                 </div>
               )}
 
-              {reservation.status === 'pending' && (
-                <div className="reservation-actions">
+              <div className="reservation-actions">
+                {reservation.status === 'pending' && (
                   <button
                     onClick={() => {
                       const checkInStr = new Date(reservation.check_in_date).toLocaleDateString('en-US', {month: 'short', day: 'numeric'});
@@ -243,8 +271,26 @@ export default function BookingHistory() {
                   >
                     Cancel Reservation
                   </button>
-                </div>
-              )}
+                )}
+                {reservation.status === 'confirmed' && !reservation.checked_in_at && (
+                  <button
+                    onClick={() => handleCheckIn(reservation.id)}
+                    className="btn-primary"
+                    title="Check in to your room"
+                  >
+                    Check In
+                  </button>
+                )}
+                {reservation.checked_in_at && !reservation.checked_out_at && (
+                  <button
+                    onClick={() => handleCheckOut(reservation.id)}
+                    className="btn-primary"
+                    title="Check out from your room"
+                  >
+                    Check Out
+                  </button>
+                )}
+              </div>
             </div>
           );
         })}

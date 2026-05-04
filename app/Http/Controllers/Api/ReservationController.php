@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Actions\Reservations\CreateReservation;
 use App\Enums\PaymentStatus;
 use App\Enums\ReservationStatus;
+use App\Enums\RoomStatus;
 use App\Events\ReservationStatusChanged;
 use App\Http\Requests\Api\StoreReservationRequest;
 use App\Http\Resources\ReservationResource;
@@ -146,6 +147,68 @@ class ReservationController
         return $reservation;
     }
 
+    public function checkIn(int $id, Request $request)
+    {
+        $reservation = Reservation::with(['guest', 'room', 'promotion', 'payments'])->find($id);
+
+        if (! $reservation) {
+            return response()->json(['message' => 'Not found'], 404);
+        }
+
+        if ($request->user()->isGuest() && $reservation->guest_id !== $request->user()->id) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        if ($reservation->status !== ReservationStatus::Confirmed) {
+            return response()->json(['message' => 'Reservation must be confirmed before check-in.'], 422);
+        }
+
+        if ($reservation->checked_in_at !== null) {
+            return response()->json(['message' => 'Guest already checked in.'], 422);
+        }
+
+        $previousStatus = $reservation->status->value;
+        $reservation->update([
+            'checked_in_at' => now(),
+            'status' => ReservationStatus::CheckedIn,
+        ]);
+        $reservation->room->update(['status' => RoomStatus::Occupied]);
+        ReservationStatusChanged::dispatch($reservation, $previousStatus);
+
+        return response()->json(new ReservationResource($this->decorateFinancials($reservation)));
+    }
+
+    public function checkOut(int $id, Request $request)
+    {
+        $reservation = Reservation::with(['guest', 'room', 'promotion', 'payments'])->find($id);
+
+        if (! $reservation) {
+            return response()->json(['message' => 'Not found'], 404);
+        }
+
+        if ($request->user()->isGuest() && $reservation->guest_id !== $request->user()->id) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        if ($reservation->checked_in_at === null) {
+            return response()->json(['message' => 'Guest has not checked in yet.'], 422);
+        }
+
+        if ($reservation->checked_out_at !== null) {
+            return response()->json(['message' => 'Guest already checked out.'], 422);
+        }
+
+        $previousStatus = $reservation->status->value;
+        $reservation->update([
+            'checked_out_at' => now(),
+            'status' => ReservationStatus::Completed,
+        ]);
+        $reservation->room->update(['status' => RoomStatus::Available]);
+        ReservationStatusChanged::dispatch($reservation, $previousStatus);
+
+        return response()->json(new ReservationResource($this->decorateFinancials($reservation)));
+    }
+
     public function getRoomReservations(int $id)
     {
         $room = Room::find($id);
@@ -154,9 +217,9 @@ class ReservationController
             return response()->json(['message' => 'Room not found'], 404);
         }
 
-        // Get all active reservations (pending or confirmed, not cancelled or completed)
+        // Get all active reservations (pending, confirmed, or checked in)
         $reservations = Reservation::where('room_id', $id)
-            ->whereIn('status', [ReservationStatus::Pending, ReservationStatus::Confirmed])
+            ->whereIn('status', [ReservationStatus::Pending, ReservationStatus::Confirmed, ReservationStatus::CheckedIn])
             ->select(['id', 'room_id', 'check_in_date', 'check_out_date', 'status'])
             ->orderBy('check_in_date')
             ->get();

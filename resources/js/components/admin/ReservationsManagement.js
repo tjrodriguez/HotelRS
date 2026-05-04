@@ -156,6 +156,30 @@ export default function ReservationsManagement() {
     }
   };
 
+  const handleCheckIn = async (reservation) => {
+    try {
+      const updatedReservation = await apiClient.checkInReservation(reservation.id);
+      setReservations((previous) => previous.map((item) => (
+        item.id === updatedReservation.id ? updatedReservation : item
+      )));
+    } catch (error) {
+      console.error('Error checking in:', error);
+      alert('Could not check in this reservation.');
+    }
+  };
+
+  const handleCheckOut = async (reservation) => {
+    try {
+      const updatedReservation = await apiClient.checkOutReservation(reservation.id);
+      setReservations((previous) => previous.map((item) => (
+        item.id === updatedReservation.id ? updatedReservation : item
+      )));
+    } catch (error) {
+      console.error('Error checking out:', error);
+      alert('Could not check out this reservation.');
+    }
+  };
+
   const columns = [
     { key: 'id', label: 'ID', align: 'right' },
     {
@@ -357,24 +381,44 @@ export default function ReservationsManagement() {
         onEdit={handleEdit}
         onDelete={handleDelete}
         renderActions={(row) => (
-          row.status === 'pending' ? (
-            <div className="table-action-group">
+          <div className="table-action-group">
+            {row.status === 'pending' && (
+              <>
+                <button
+                  className="btn btn-sm btn-success"
+                  onClick={() => handleAccept(row)}
+                  type="button"
+                >
+                  Accept
+                </button>
+                <button
+                  className="btn btn-sm btn-danger"
+                  onClick={() => handleDecline(row)}
+                  type="button"
+                >
+                  Decline
+                </button>
+              </>
+            )}
+            {row.status === 'confirmed' && !row.checked_in_at && (
               <button
-                className="btn btn-sm btn-success"
-                onClick={() => handleAccept(row)}
+                className="btn btn-sm btn-primary"
+                onClick={() => handleCheckIn(row)}
                 type="button"
               >
-                Accept
+                Check In
               </button>
+            )}
+            {row.checked_in_at && !row.checked_out_at && (
               <button
-                className="btn btn-sm btn-danger"
-                onClick={() => handleDecline(row)}
+                className="btn btn-sm btn-primary"
+                onClick={() => handleCheckOut(row)}
                 type="button"
               >
-                Decline
+                Check Out
               </button>
-            </div>
-          ) : null
+            )}
+          </div>
         )}
       />
 

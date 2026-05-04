@@ -25,6 +25,14 @@ class RoomController
             $query->where('floor', $request->floor);
         }
 
+        if ($request->has('search')) {
+            $search = $request->input('search');
+            $query->where(function ($q) use ($search) {
+                $q->where('room_number', 'like', "%{$search}%")
+                    ->orWhere('description', 'like', "%{$search}%");
+            });
+        }
+
         $paginated = $query->paginate(20);
 
         $checkIn = $request->input('check_in');
@@ -32,7 +40,7 @@ class RoomController
 
         $paginated->getCollection()->transform(function (Room $room) use ($checkIn, $checkOut) {
             $status = $room->status ?? RoomStatus::Available;
-            $isBlockedByStatus = in_array($status, [RoomStatus::Occupied, RoomStatus::Reserved, RoomStatus::Maintenance], true);
+            $isBlockedByStatus = in_array($status, [RoomStatus::Occupied, RoomStatus::Maintenance, RoomStatus::Cleaning, RoomStatus::OutOfOrder], true);
 
             $isBlockedByReservation = false;
             if ($checkIn && $checkOut) {
@@ -91,12 +99,47 @@ class RoomController
         ]);
     }
 
+    public function availabilityCalendar(Request $request)
+    {
+        $request->validate([
+            'start' => 'required|date',
+            'end' => 'required|date|after:start',
+        ]);
+
+        $rooms = Room::with(['roomType'])->get();
+        $start = $request->input('start');
+        $end = $request->input('end');
+
+        $calendar = $rooms->map(function (Room $room) use ($start, $end) {
+            $reservations = $room->reservations()
+                ->whereIn('status', ['pending', 'confirmed', 'checked_in'])
+                ->where(function ($query) use ($start, $end) {
+                    $query->whereBetween('check_in_date', [$start, $end])
+                        ->orWhereBetween('check_out_date', [$start, $end])
+                        ->orWhere(function ($q) use ($start, $end) {
+                            $q->where('check_in_date', '<=', $start)
+                                ->where('check_out_date', '>=', $end);
+                        });
+                })
+                ->select(['id', 'check_in_date', 'check_out_date', 'status', 'guest_id'])
+                ->with('guest:id,name')
+                ->get();
+
+            return [
+                'room' => new RoomResource($room),
+                'reservations' => $reservations,
+            ];
+        });
+
+        return response()->json($calendar);
+    }
+
     public function store(Request $request)
     {
         $validated = $request->validate([
             'room_number' => 'required|unique:rooms',
             'room_type_id' => 'required|exists:room_types,id',
-            'status' => 'nullable|string|in:available,occupied,maintenance,reserved',
+            'status' => 'nullable|string|in:available,occupied,maintenance,cleaning,out_of_order',
             'floor' => 'required|integer|min:1',
             'description' => 'nullable|string',
             'amenities' => 'nullable|array',
@@ -119,7 +162,7 @@ class RoomController
         $validated = $request->validate([
             'room_number' => 'unique:rooms,room_number,'.$id,
             'room_type_id' => 'exists:room_types,id',
-            'status' => 'nullable|string|in:available,occupied,maintenance,reserved',
+            'status' => 'nullable|string|in:available,occupied,maintenance,cleaning,out_of_order',
             'floor' => 'integer|min:1',
             'description' => 'nullable|string',
             'amenities' => 'nullable|array',

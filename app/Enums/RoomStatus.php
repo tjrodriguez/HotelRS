@@ -7,5 +7,6 @@ enum RoomStatus: string
     case Available = 'available';
     case Occupied = 'occupied';
     case Maintenance = 'maintenance';
-    case Reserved = 'reserved';
+    case Cleaning = 'cleaning';
+    case OutOfOrder = 'out_of_order';
 }
