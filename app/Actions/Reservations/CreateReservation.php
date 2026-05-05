@@ -2,12 +2,16 @@
 
 namespace App\Actions\Reservations;
 
+use App\Enums\PaymentMethod;
+use App\Enums\PaymentStatus;
+use App\Events\ReservationCreated;
 use App\Models\Payment;
 use App\Models\Promotion;
 use App\Models\Reservation;
 use App\Models\Room;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 
 class CreateReservation
@@ -16,7 +20,7 @@ class CreateReservation
 
     public function handle(User $guest, array $data): Reservation
     {
-        return DB::transaction(function () use ($guest, $data): Reservation {
+        $reservation = DB::transaction(function () use ($guest, $data): Reservation {
             $room = Room::with('roomType')->findOrFail($data['room_id']);
 
             if (! $room->isAvailable($data['check_in'], $data['check_out'])) {
@@ -74,16 +78,28 @@ class CreateReservation
                 $wallet->save();
 
                 Payment::create([
-                    'user_id' => $guest->id,
                     'reservation_id' => $reservation->id,
                     'amount' => $pricing['total_price'],
-                    'method' => 'e_wallet',
-                    'status' => 'completed',
+                    'payment_method' => PaymentMethod::EWallet,
+                    'status' => PaymentStatus::Completed,
                     'paid_at' => now(),
                 ]);
             }
 
             return $reservation->load(['guest', 'room.roomType', 'promotion', 'payments']);
         });
+
+        // Reload relationships for event dispatch to prevent null access
+        $reservation->load(['guest', 'room']);
+
+        // Dispatch event but don't let it break the response
+        try {
+            ReservationCreated::dispatch($reservation);
+        } catch (\Throwable $e) {
+            // Log the error but don't fail the request
+            Log::error('ReservationCreated event error: '.$e->getMessage());
+        }
+
+        return $reservation;
     }
 }

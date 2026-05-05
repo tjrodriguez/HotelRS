@@ -2,8 +2,10 @@
 
 namespace App\Providers;
 
+use App\Events\ReservationCreated;
 use App\Events\ReservationStatusChanged;
 use App\Listeners\LogReservationChange;
+use App\Listeners\NotifyAdminOnReservationCreated;
 use App\Listeners\SyncRoomStatus;
 use App\Models\Payment;
 use App\Models\Reservation;
@@ -39,6 +41,11 @@ class AppServiceProvider extends ServiceProvider
         Event::listen(
             ReservationStatusChanged::class,
             LogReservationChange::class,
+        );
+
+        Event::listen(
+            ReservationCreated::class,
+            NotifyAdminOnReservationCreated::class,
         );
     }
 

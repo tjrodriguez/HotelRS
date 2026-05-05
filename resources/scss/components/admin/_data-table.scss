@@ -70,18 +70,23 @@
 }
 
 .table-action-group {
-  display: inline-flex;
+  display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  min-width: 140px;
 }
 
 .table-action-group .btn {
-  padding: 6px 12px;
+  padding: 8px 14px;
   font-size: 12px;
-  line-height: 1;
+  line-height: 1.2;
   border-radius: 8px;
   font-weight: 600;
   transition: all 0.2s ease;
+  white-space: nowrap;
+  flex: 0 1 auto;
 }
 
 .data-table .btn-icon {
@@ -115,5 +120,34 @@
   border-color: rgba(248, 113, 113, 0.5);
   color: var(--ad-danger);
   transform: translateY(-1px);
+}
+
+/* Responsive adjustments for action buttons */
+@media (max-width: 1024px) {
+  .table-action-group {
+    min-width: 120px;
+    gap: 6px;
+  }
+
+  .table-action-group .btn {
+    padding: 7px 12px;
+    font-size: 11px;
+  }
+}
+
+@media (max-width: 768px) {
+  .table-action-group {
+    flex-direction: column;
+    min-width: auto;
+    gap: 6px;
+    width: 100%;
+  }
+
+  .table-action-group .btn {
+    padding: 8px 12px;
+    font-size: 12px;
+    width: 100%;
+    text-align: center;
+  }
 }
 
